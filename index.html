@@ -1,1 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>CAB Student Leader Timesheet</title>
+    
+    <link rel="icon" href="data:," />
+    
+    <!-- SheetJS for Excel Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+    <!-- GSAP for Smooth Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        gcu: {
+                            50: '#f4effa',
+                            100: '#e5dcf4',
+                            200: '#cebaea',
+                            300: '#b190db',
+                            400: '#9060c8',
+                            500: '#753bbf',
+                            600: '#522398', /* Main GCU Purple */
+                            700: '#461d85',
+                            800: '#3a1870',
+                            900: '#32165c',
+                        }
+                    },
+                    borderRadius: {
+                        'lg': '0.5rem', 'xl': '0.5rem', '2xl': '0.5rem', '3xl': '0.5rem'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: "Inter", sans-serif; background-color: #f9fafb; color: #111827; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .no-save-pass { -webkit-text-security: disc !important; text-security: disc !important; }
+
+        /* PROFESSIONAL CARDS */
+        .pro-card {
+            background: #ffffff; border-radius: 0.5rem; border: 1px solid #e5e7eb;
+            border-top: 4px solid #522398;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .pro-card-subtle { background: #ffffff; border-radius: 0.5rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+
+        /* BUTTONS: STRICT DARK PURPLE BRANDING */
+        .btn-primary {
+            background-color: #522398; color: white; border-radius: 0.375rem;
+            transition: all 0.2s ease; font-weight: 600; border: 2px solid #522398;
+        }
+        .btn-primary:hover { background-color: #461d85; border-color: #461d85; }
+
+        .btn-secondary {
+            background-color: transparent; color: #522398; border: 2px solid #522398;
+            border-radius: 0.375rem; transition: all 0.2s ease; font-weight: 600;
+        }
+        .btn-secondary:hover { background-color: #522398; color: white; }
+
+        /* VIEW SWITCHING */
+        .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s ease; width: 100%; }
+        .view.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* INPUTS */
+        .control-input {
+            width: 100%; background: #ffffff; border: 1px solid #d1d5db; color: #111827;
+            border-radius: 0.375rem; padding: 0.625rem 0.875rem; margin-bottom: 0.75rem;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-size: 0.925rem;
+        }
+        .control-input::placeholder { color: #9ca3af; }
+        .control-input:focus { border-color: #522398; box-shadow: 0 0 0 3px rgba(82, 35, 152, 0.15); }
+        
+        select.control-input { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        select[multiple].control-input { background-image: none; padding-right: 1rem; min-height: 80px; }
+        select[multiple].control-input option { padding: 0.5rem; margin-bottom: 2px; border-radius: 0.25rem; }
+        select[multiple].control-input option:checked { background: #522398 !important; color: white; }
+        input[type="date"].control-input { width: 100%; min-width: 0; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+        input[type="date"].control-input::-webkit-date-and-time-value { text-align: left; }
+        input[type="date"].control-input::-webkit-calendar-picker-indicator { cursor: pointer; margin-left: auto; }
+
+        .form-label { display: block; margin-bottom: 0.5rem; color: #4b5563; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .form-group { margin-bottom: 1.25rem; }
+
+        /* Loaders & Toasts */
+        .loader { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-bottom-color: #fff; border-radius: 50%; animation: smooth-spin 0.8s linear infinite; margin-left: 8px; }
+        .loader-dark { border-color: rgba(82,35,152,0.2); border-bottom-color: #522398; }
+        @keyframes smooth-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes savedFade { 0% { opacity:0; transform:translateY(4px); } 15% { opacity:1; transform:translateY(0); } 75% { opacity:1; } 100% { opacity:0; } }
+        .saved-flash { animation: savedFade 2s ease forwards; }
+
+        #toast { 
+            position: fixed; bottom: max(30px, calc(env(safe-area-inset-bottom, 0px) + 15px)); 
+            left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; 
+            padding: 14px 20px; border-radius: 9999px; z-index: 2000; display: none; 
+            text-align: center; background: #1f2937; color: white; font-weight: 500; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-[100dvh] w-full relative overflow-x-hidden font-sans flex flex-col items-center justify-start antialiased custom-scroll">
+
+    <!-- ASGCU Style Navigation Bar -->
+    <nav class="w-full bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm h-16 sm:h-20 flex items-center">
+        <div class="w-full max-w-7xl mx-auto px-4 sm:px-8 flex justify-between items-center">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <img src="https://i.imgur.com/xhVbdmF.png" alt="Logo" class="h-10 sm:h-12 w-auto object-contain" onerror="this.style.display='none'" />
+            </div>
+            <div class="font-bold text-gray-800 text-sm sm:text-base tracking-tight uppercase flex items-center gap-2">
+                <i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5 text-gcu-600"></i> ASGCU Timesheet
+            </div>
+        </div>
+    </nav>
+
+    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-start min-h-[calc(100dvh-5rem)]">
+        <div class="flex-1 w-full flex flex-col items-center justify-start pb-12">
+
+            <!-- LOGIN VIEW -->
+            <div id="loginView" class="view active w-full">
+                <!-- Full Width Hero Banner -->
+                <div class="w-full relative h-[300px] sm:h-[400px] overflow-hidden">
+                    <div id="loginBannerImg" class="absolute inset-0 bg-cover will-change-transform" style="background-image: url('https://i.imgur.com/BgYlUtX.jpeg'); background-position: center 25%; transform: translate3d(0, 0, 0) scale(1.15); transform-origin: center;"></div>
+                    <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                </div>
+
+                <div class="max-w-md w-full mx-auto px-4 mt-8 relative z-20">
+                    <div class="pro-card p-8 sm:p-10 text-center">
+                        <div class="mb-5 flex justify-center">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center border border-gray-200 shadow-sm text-gcu-600">
+                                <i data-lucide="user" class="w-8 h-8"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl sm:text-3xl font-bold mb-2 tracking-tight text-gray-900">Student Login</h3>
+                        <p class="text-gray-500 mb-8 font-medium text-sm leading-relaxed">Enter your Student ID for <span id="loginActiveYear" class="text-gcu-600 font-bold">...</span>.</p>
+
+                        <div class="mb-6 text-center">
+                            <label for="loginStudentID" class="form-label text-left">Student ID Number</label>
+                            <input type="number" id="loginStudentID" class="control-input text-xl tracking-widest text-center !py-3 font-semibold" placeholder="e.g. 123456" autocomplete="off" onkeyup="if(event.key==='Enter') studentLogin()"/>
+                        </div>
+
+                        <button class="w-full btn-primary py-3 flex justify-center items-center gap-2 text-sm tracking-widest uppercase" id="loginBtn" onclick="studentLogin()">
+                            <span>Access Timesheet</span>
+                            <div class="loader" id="loginLoader"></div>
+                        </button>
+
+                        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center px-2">
+                            <span class="text-gray-400 text-xs font-medium">© <span id="year"></span> ASGCU</span>
+                            <button class="text-xs text-gcu-600 hover:text-gcu-800 font-bold transition-colors uppercase tracking-wider" onclick="showGate()">Staff Access</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIMESHEET VIEW -->
+            <div id="timesheetView" class="view max-w-2xl w-full mx-auto mt-8 sm:mt-12 px-4">
+                <div class="pro-card p-6 sm:p-8">
+
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 pb-5 mb-5 gap-4">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900" id="ts-greeting">Hello Student,</h3>
+                            <p class="text-gray-500 font-medium text-sm mt-1"><span id="ts-position">Position</span> &bull; <span id="ts-team">Team Name</span></p>
+                        </div>
+                        <div class="sm:text-right bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+                            <div class="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-0.5" id="ts-hoursLabel">Total Pending</div>
+                            <div class="text-3xl font-black text-gcu-600 flex items-baseline gap-1 justify-start sm:justify-end">
+                                <span id="ts-totalHours">0.0</span>
+                                <span class="text-xs font-semibold text-gray-400" id="ts-reqHours">/ 0.0 required</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex justify-between items-center">
+                            <span>Logged Hours</span>
+                            <div class="flex items-center gap-2">
+                                <span id="autosaveIndicator" class="hidden text-green-600 text-[10px] font-bold flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded border border-green-200">
+                                    <i data-lucide="check" class="w-3 h-3"></i> Saved
+                                </span>
+                                <span id="ts-weekLabel" class="text-gray-500 bg-gray-100 px-2 py-0.5 rounded text-[10px] uppercase font-bold border border-gray-200">Pending Submit</span>
+                            </div>
+                        </div>
+                        <div id="ts-entriesList" class="flex flex-col gap-2.5 max-h-[250px] sm:max-h-[350px] overflow-y-auto pr-2 custom-scroll"></div>
+                    </div>
+
+                    <div id="entryFormBox" class="pro-card-subtle p-5 mb-6 transition-all duration-300 relative shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 id="formModeTitle" class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-gcu-600"></i> Log New Hours</h4>
+                            <button id="cancelEditBtn" class="hidden text-xs text-red-600 hover:text-red-700 transition font-semibold items-center gap-1 bg-red-50 px-2 py-1 rounded" onclick="cancelEdit()"><i data-lucide="x" class="w-3 h-3"></i> Cancel</button>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                            <div class="form-group !mb-0 flex-1">
+                                <label for="entryDate" class="form-label">Date</label>
+                                <input type="date" id="entryDate" class="control-input" />
+                            </div>
+                            <div class="form-group !mb-0 sm:w-1/3">
+                                <label for="entryHours" class="form-label">Hours</label>
+                                <input type="number" id="entryHours" class="control-input" step="0.25" min="0" placeholder="e.g. 2.5" />
+                            </div>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="entryTask" class="form-label">Task Description</label>
+                            <input type="text" id="entryTask" class="control-input" placeholder="What did you work on?" />
+                        </div>
+                        <button id="saveEntryBtn" class="w-full btn-primary font-bold py-3 rounded-xl transition-all flex justify-center items-center gap-2" onclick="saveTimeEntry()">
+                            <i data-lucide="plus" class="w-4 h-4 text-white" id="saveEntryIcon"></i> <span id="saveEntryText">Add to Week</span>
+                        </button>
+                    </div>
+
+                    <!-- Shown when selected week is already submitted -->
+                    <div id="submittedNotice" class="hidden bg-green-50 border border-green-200 rounded-2xl p-6 mb-6 text-center shadow-sm">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                        </div>
+                        <div class="text-green-800 font-bold text-sm mb-1 uppercase tracking-wide">Hours Submitted</div>
+                        <div class="text-green-700 text-xs leading-relaxed max-w-sm mx-auto">This week's timesheet has already been officially submitted and recorded.</div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-5 text-center">
+                        <p class="text-[11px] text-gray-500 leading-relaxed px-4"><span class="font-semibold text-gray-700">Hours auto-save as you add them.</span> Due <span class="font-semibold text-gray-700">Sunday at 11:59 PM</span> and automatically submitted at the start of each new week.</p>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-6 px-1 gap-3 flex-wrap">
+                        <button class="text-gray-400 hover:text-gcu-600 text-xs font-semibold transition" onclick="logout()">Switch Account</button>
+                        <div class="flex items-center gap-2">
+                            <button id="teamHoursBtn" class="hidden btn-secondary text-xs font-bold px-3 py-2 rounded-lg items-center gap-1.5" onclick="showTeamView()">
+                                <i data-lucide="users" class="w-3.5 h-3.5"></i> Team
+                            </button>
+                            <button class="btn-secondary text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5" onclick="showHistory()">
+                                <i data-lucide="history" class="w-3.5 h-3.5"></i> History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUCCESS VIEW -->
+            <div id="successView" class="view mx-auto w-full mt-8 sm:mt-12 px-4" style="max-width: min(24rem, calc(100% - 1rem));">
+                <div class="pro-card p-10 text-center border-t-green-500">
+                    <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-green-100 text-green-600 shadow-sm">
+                        <i data-lucide="check" class="w-10 h-10"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2 text-gray-900">Submitted!</h2>
+                    <p class="text-gray-500 mb-8 text-sm">Your hours have been officially recorded.</p>
+                    <button class="w-full btn-secondary font-bold py-3 rounded-xl text-sm" onclick="logout()">Return to Login</button>
+                </div>
+            </div>
+
+            <!-- HISTORY VIEW -->
+            <div id="historyView" class="view max-w-2xl w-full mx-auto mt-8 sm:mt-12 px-4">
+                <div class="pro-card p-6 sm:p-8">
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-5">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">My Hours History</h3>
+                            <p class="text-gray-500 text-xs font-semibold mt-0.5" id="history-team"></p>
+                        </div>
+                        <button onclick="switchView('timesheet')" class="btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border-gray-300">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
+                        <span class="text-gray-600 text-[10px] font-bold uppercase tracking-widest">All-Time Total</span>
+                        <span class="text-2xl font-black text-gcu-600" id="history-total">0.0</span>
+                    </div>
+                    <div id="history-list" class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scroll"></div>
+                </div>
+            </div>
+
+            <!-- TEAM VIEW -->
+            <div id="teamView" class="view max-w-3xl w-full mx-auto mt-8 sm:mt-12 px-4">
+                <div class="pro-card p-6 sm:p-8">
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-5 mb-5 gap-4 flex-wrap">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Team Hours</h3>
+                            <p class="text-gray-500 text-xs font-semibold mt-0.5" id="team-teamName"></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="teamWeekFilter" class="control-input !mb-0 !w-auto py-1.5 px-3 rounded-lg text-xs font-bold border-gray-300" onchange="renderTeamView()">
+                                <option value="current">Current Week</option>
+                                <option value="previous">Previous Week</option>
+                            </select>
+                            <button onclick="switchView('timesheet')" class="btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-gray-500 text-xs mb-4">Pending and submitted hours for your team. Tap a member for full history.</p>
+                    <div id="team-memberList" class="flex flex-col gap-1 max-h-[60vh] overflow-y-auto pr-2 custom-scroll"></div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="dashboardView" class="view max-w-7xl w-full mx-auto mt-8 sm:mt-12 px-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pro-card p-5 sm:p-6">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-bold text-gray-900">Master Overview</h2>
+                            <div id="weekStatusIndicator"></div>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-1">Reviewing submissions across all teams.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto items-center">
+                        <select id="adminYearFilter" class="control-input !mb-0 !w-auto py-2 px-3 rounded-lg text-xs font-bold border-gray-300" onchange="renderDashboard()"></select>
+                        <select id="adminWeekFilter" class="control-input !mb-0 !w-auto py-2 px-3 rounded-lg text-xs font-bold border-gray-300" onchange="renderDashboard()">
+                            <option value="current">Current Week</option>
+                            <option value="previous">Previous Week</option>
+                        </select>
+                        <div class="h-6 w-px bg-gray-300 hidden md:block mx-1"></div>
+                        <button onclick="downloadExcel()" class="btn-primary py-2 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Export
+                        </button>
+                        <button onclick="switchView('settings')" class="btn-primary py-2 px-3 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="settings" class="w-3.5 h-3.5 text-white"></i> Setup
+                        </button>
+                        <button onclick="logout()" class="btn-secondary py-2 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                            Exit
+                        </button>
+                    </div>
+                </div>
+                <div id="admin-teamCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8"></div>
+            </div>
+
+            <!-- SETTINGS VIEW -->
+            <div id="settingsView" class="view max-w-7xl w-full mx-auto mt-8 sm:mt-12 px-4">
+                <div class="pro-card p-6 sm:p-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-200 pb-5">
+                        <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-5 h-5 text-gcu-600"></i> System Configuration
+                        </h2>
+                        <div class="flex gap-2">
+                            <button id="saveChangesBtn" class="btn-primary py-2 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" onclick="saveAdminChanges()">
+                                <i data-lucide="save" class="w-3.5 h-3.5"></i> Save Changes <div class="loader" id="saveLoader"></div>
+                            </button>
+                            <button class="btn-secondary py-2 px-4 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" onclick="renderDashboard(); switchView('dashboard')">
+                                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <!-- Left Column: Config -->
+                        <div class="lg:col-span-5 flex flex-col gap-8">
+                            
+                            <!-- Global Config -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex items-center gap-1.5"><i data-lucide="monitor" class="w-3.5 h-3.5"></i> Global Settings</div>
+                                <div class="flex flex-col gap-3">
+                                    <input type="text" id="setCoverImage" class="control-input !mb-0 text-sm" placeholder="Login Cover Image URL" />
+                                    <input type="text" id="setNewPass" class="control-input !mb-0 no-save-pass text-sm" placeholder="Change admin password..." autocomplete="new-password" spellcheck="false" />
+                                    
+                                    <div class="flex items-center justify-between pro-card-subtle p-3 shadow-sm" title="If fewer students than this submit hours, the system assumes it is a break week and pauses missing hour emails.">
+                                        <div class="flex flex-col pr-3">
+                                            <span class="text-sm font-semibold text-gray-800">Active Week Threshold</span>
+                                            <span class="text-[10px] text-gray-500 leading-tight">Min. submits to trigger emails</span>
+                                        </div>
+                                        <input type="number" id="setSubmitThreshold" class="control-input !mb-0 !w-16 !py-1.5 !px-2 text-center font-bold text-sm" min="1" value="7" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Email Simulator -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex items-center gap-1.5"><i data-lucide="mail-warning" class="w-3.5 h-3.5"></i> Automation Simulator</div>
+                                <div class="pro-card-subtle p-4 flex flex-col gap-3 shadow-sm bg-gray-50">
+                                    <p class="text-xs text-gray-600 leading-relaxed">Run a dry test to see email actions for the past week based on current data. No actual emails will be sent.</p>
+                                    <button class="w-full btn-secondary font-bold py-2 rounded-lg flex justify-center items-center gap-2 text-xs bg-white" onclick="runEmailSimulation()">
+                                        <i data-lucide="play" class="w-3.5 h-3.5 text-gcu-600"></i> Run Dry Test
+                                    </button>
+                                    <div id="simResults" class="hidden mt-2 p-3 rounded-lg border border-gray-200 text-xs leading-relaxed max-h-[300px] overflow-y-auto whitespace-pre-line font-mono bg-white"></div>
+                                </div>
+                            </div>
+
+                            <!-- Teams -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex justify-between items-center">
+                                    <span class="flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Teams</span>
+                                    <span class="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-[10px] border border-gray-200" id="teamCount">0</span>
+                                </div>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="text" id="newTeamInput" class="control-input !mb-0 flex-1 text-sm border-gray-300" placeholder="New Team Name..." />
+                                    <button class="btn-primary px-4 rounded-lg text-xs font-bold" onclick="addTeam()">Add</button>
+                                </div>
+                                <div id="settings-teamList" class="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scroll"></div>
+                            </div>
+                            
+                            <!-- Positions -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex justify-between items-center">
+                                    <span class="flex items-center gap-1.5"><i data-lucide="briefcase" class="w-3.5 h-3.5"></i> Roles & Minimums</span>
+                                    <span class="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-[10px] border border-gray-200" id="positionCount">0</span>
+                                </div>
+                                <div class="flex flex-col gap-2 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                    <div class="flex gap-2">
+                                        <input type="text" id="newPosName" class="control-input !mb-0 flex-1 text-sm bg-white border-gray-300" placeholder="Role (e.g. Director)" />
+                                        <input type="number" id="newPosHours" class="control-input !mb-0 w-24 text-sm px-2 text-center bg-white border-gray-300" placeholder="Min Hrs" step="0.5" min="0" />
+                                    </div>
+                                    <div class="flex justify-between items-end mt-1">
+                                        <div class="flex flex-col gap-2">
+                                            <label class="text-[11px] text-gray-700 font-semibold flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" id="newPosEmails" class="w-3.5 h-3.5 accent-gcu-600 rounded" checked> 
+                                                Gets warning if hours missed
+                                            </label>
+                                            <label class="text-[11px] text-gray-700 font-semibold flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" id="newPosCC" class="w-3.5 h-3.5 accent-gcu-600 rounded"> 
+                                                Is CC'd on team's warnings
+                                            </label>
+                                        </div>
+                                        <button class="btn-primary px-4 py-2 text-xs rounded-lg font-bold" onclick="addPosition()">Add</button>
+                                    </div>
+                                </div>
+                                <div id="settings-positionList" class="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scroll"></div>
+                            </div>
+
+                            <!-- Staff -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex justify-between items-center">
+                                    <span class="flex items-center gap-1.5"><i data-lucide="shield" class="w-4 h-4"></i> Staff Alerts</span>
+                                    <span class="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-[10px] border border-gray-200" id="staffCount">0</span>
+                                </div>
+                                <div class="pro-card-subtle p-4 rounded-2xl border border-gray-200 border-dashed flex flex-col gap-3 mb-4 shadow-sm bg-gray-50">
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <input type="text" id="newStaffName" class="control-input !mb-0 flex-1 text-sm bg-white" placeholder="Staff Name" />
+                                        <input type="email" id="newStaffEmail" class="control-input !mb-0 flex-1 text-sm bg-white" placeholder="Staff Email" />
+                                    </div>
+                                    <div class="flex gap-3 items-start">
+                                        <div class="flex-1">
+                                            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-widest pl-1 mb-1 block">Select Teams (Hold Ctrl/Cmd)</label>
+                                            <select id="newStaffTeams" class="control-input !mb-0 w-full text-sm custom-scroll bg-white" multiple size="3"></select>
+                                        </div>
+                                        <button class="btn-primary px-5 rounded-xl transition-all h-[80px] shrink-0 text-xs font-bold mt-[18px]" onclick="addStaff()">Add</button>
+                                    </div>
+                                </div>
+                                <div id="settings-staffList" class="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scroll"></div>
+                            </div>
+                            
+                            <!-- Academic Years -->
+                            <div>
+                                <div class="text-gray-500 text-xs font-bold tracking-wider uppercase mb-3 flex justify-between items-center">
+                                    <span class="flex items-center gap-1.5"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Academic Years</span>
+                                    <span class="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-[10px] border border-gray-200" id="yearCount">0</span>
+                                </div>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="text" id="newYearInput" class="control-input !mb-0 flex-1 text-sm border-gray-300" placeholder="e.g. 2025-2026" />
+                                    <button class="btn-primary px-4 rounded-lg text-xs font-bold" onclick="addYear()">Add</button>
+                                </div>
+                                <div id="settings-yearList" class="flex flex-col gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scroll"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Roster -->
+                        <div class="lg:col-span-7 flex flex-col h-full">
+                            <div class="pro-card-subtle p-5 flex flex-col h-full shadow-sm">
+                                <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
+                                    <span class="text-gray-700 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><i data-lucide="graduation-cap" class="w-4 h-4"></i> Student Roster</span>
+                                    <select id="settingsRosterYear" class="control-input !mb-0 !w-auto !py-1 !px-2 rounded text-xs font-bold bg-white border-gray-300" onchange="changeRosterYear()"></select>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5 shadow-sm">
+                                    <div class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-3 flex justify-between items-center">
+                                        <span id="addStudFormTitle">Add New Student</span>
+                                        <button id="cancelStudEditBtn" class="hidden text-red-600 hover:text-red-700 transition flex items-center gap-1" onclick="cancelRosterEdit()"><i data-lucide="x" class="w-3 h-3"></i> Cancel Edit</button>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                        <input type="number" id="newStudID" class="control-input !mb-0 text-sm bg-white" placeholder="ID Number" />
+                                        <input type="text" id="newStudName" class="control-input !mb-0 text-sm bg-white" placeholder="Full Name" />
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                                        <input type="email" id="newStudEmail" class="control-input !mb-0 text-sm bg-white" placeholder="Student Email" />
+                                        <select id="newStudTeam" class="control-input !mb-0 text-sm bg-white"><option value="">Select Team...</option></select>
+                                        <select id="newStudPosition" class="control-input !mb-0 text-sm bg-white"><option value="">Select Position...</option></select>
+                                    </div>
+                                    <button id="addStudBtn" class="w-full btn-primary font-bold py-2.5 rounded-lg transition-all flex justify-center items-center gap-2 text-sm" onclick="addStudentToRoster()">
+                                        <i data-lucide="user-plus" class="w-4 h-4 text-white" id="addStudIcon"></i> <span id="addStudText">Add to Roster</span>
+                                    </button>
+                                </div>
+
+                                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2 px-1">Current Roster</div>
+                                <div id="admin-rosterList" class="flex flex-col gap-2 flex-1 min-h-[400px] overflow-y-auto pr-2 custom-scroll"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> 
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="gateModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4">
+        <div id="gateBackdrop" class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="hideGate()"></div>
+        <div id="gateCard" class="relative w-full max-w-sm pro-card p-8 flex flex-col items-center text-center z-10 transition-all duration-300">
+            <div class="mb-4">
+                <div class="w-14 h-14 rounded-full bg-gcu-50 flex items-center justify-center border border-gcu-100 shadow-sm">
+                    <i data-lucide="lock" class="w-6 h-6 text-gcu-600"></i>
+                </div>
+            </div>
+            <h3 class="text-xl font-bold mb-1 text-gray-900">Staff Login</h3>
+            <p class="text-gray-500 text-xs mb-6">Enter admin password to access system settings.</p>
+            
+            <input type="password" id="adminPass" class="control-input text-center mb-5 no-save-pass" placeholder="Password" autocomplete="off" spellcheck="false" onkeyup="if(event.key==='Enter') verifyAdmin()"/>
+            
+            <button class="w-full btn-primary font-bold py-3 rounded-xl flex justify-center items-center gap-2 text-sm" id="gateBtn" onclick="verifyAdmin()">
+                <span>Authorize</span> <div class="loader loader-dark" id="gateLoader"></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Student Detail Modal -->
+    <div id="studentDetailModal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onclick="closeStudentDetails()"></div>
+        <div class="relative w-full max-w-lg pro-card p-6 sm:p-8 flex flex-col max-h-[90vh] overflow-y-auto custom-scroll z-10">
+            
+            <div class="flex justify-between items-start border-b border-gray-200 pb-4 mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900" id="detailModalName">Student Name</h3>
+                    <p class="text-gray-500 text-xs font-semibold mt-1" id="detailModalTeam">Team Name</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="deleteStudentBtn" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition border border-red-200" onclick="promptDeleteStudent()" title="Delete Student">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                    <button class="text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 p-2 rounded-lg transition border border-gray-200" onclick="closeStudentDetails()">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5 shadow-sm">
+                <span class="text-gray-600 text-[10px] font-bold uppercase tracking-widest">All-Time Total</span>
+                <span class="text-2xl font-black text-gray-900" id="detailModalTotal">0.0</span>
+            </div>
+
+            <div id="adminLogEditPanel" class="hidden bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-gcu-500"></div>
+                <div class="text-xs font-bold text-gray-700 mb-3 pl-2" id="adminEditPanelTitle">Edit Entry</div>
+                <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                    <input type="date" id="adminEditDate" class="control-input !mb-0 flex-1 text-sm py-2" />
+                    <input type="number" id="adminEditHours" class="control-input !mb-0 sm:w-1/3 text-sm py-2" step="0.25" min="0" placeholder="Hours" />
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="adminEditTask" class="control-input !mb-0 text-sm py-2" placeholder="Task description" />
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="adminConfirmEdit()" class="flex-1 btn-primary font-bold py-2 rounded-lg text-xs">Save</button>
+                    <button onclick="adminCancelEdit()" class="flex-1 btn-secondary font-bold py-2 rounded-lg text-xs">Cancel</button>
+                </div>
+            </div>
+
+            <div class="text-gray-400 text-[10px] font-bold tracking-widest uppercase mb-2 px-1">Weekly Breakdown</div>
+            <div id="detailModalLogs" class="flex flex-col gap-3 pr-1"></div>
+        </div>
+    </div>
+    
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-[2000] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
+        <div class="relative w-full max-w-sm pro-card p-6 flex flex-col text-center z-10 border-t-4 border-t-red-500">
+            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 border border-red-100">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-2 text-gray-900" id="confirmModalTitle">Are you sure?</h3>
+            <p class="text-gray-500 text-sm mb-6" id="confirmModalMsg">This action cannot be undone.</p>
+            <div class="flex gap-2">
+                <button class="flex-1 btn-secondary font-bold py-2.5 rounded-lg" onclick="closeConfirmModal()">Cancel</button>
+                <button class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition border-2 border-red-600 hover:border-red-700" id="confirmModalActionBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">Update Successful</div>
+
+<script>
+    // === GOOGLE APPS SCRIPT BACKEND ===
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyAMjFRzO9iYUoKvQ-LeL7SqnMNgG7A3m7fm7RBVH0aOJqBp1IcYpktIC8351UxeULb/exec";
+    
+    async function gasFetch(action, payload = {}) {
+        payload.action = action;
+        const res = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        return data.data;
+    }
+
+    const CONFIG_CACHE_KEY = 'ts_config_gas';
+    const CONFIG_CACHE_TTL = 3600000;
+
+    const todayDate = new Date();
+    function getMonday(d) { const date = new Date(d); const day = date.getDay(); const diff = date.getDate() - day + (day === 0 ? -6 : 1); return new Date(date.setDate(diff)); }
+    const currentMonday = getMonday(todayDate); currentMonday.setHours(0,0,0,0);
+    const prevMonday = new Date(currentMonday); prevMonday.setDate(prevMonday.getDate() - 7);
+    const currentSunday = new Date(currentMonday); currentSunday.setDate(currentMonday.getDate() + 6); currentSunday.setHours(23,59,59,999);
+    const prevSunday = new Date(prevMonday); prevSunday.setDate(prevMonday.getDate() + 6); prevSunday.setHours(23,59,59,999);
+    function getWeekIdentifier(dateString) { return getMonday(new Date(dateString + 'T00:00:00')).toISOString().split('T')[0]; }
+    function getAZDateStr() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' }); }
+    const CURRENT_WEEK_ID_AZ = getWeekIdentifier(getAZDateStr());
+    function formatWeekRange(startIsoString) {
+        const start = new Date(startIsoString + 'T00:00:00'); const end = new Date(start); end.setDate(end.getDate() + 6);
+        return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    }
+    function escapeHTML(str) { return !str ? '' : str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+
+    const DEFAULT_POSITIONS = [ 
+        { name: 'Director', minHours: 10, receivesEmails: true, ccOnTeamEmails: true }, 
+        { name: 'Assistant Director', minHours: 8, receivesEmails: true, ccOnTeamEmails: true }, 
+        { name: 'Team Member', minHours: 5, receivesEmails: true, ccOnTeamEmails: false } 
+    ];
+
+    let state = {
+        view: 'login', currentUser: null, currentWeekEntries: [], editingEntryId: null, viewingStudentId: null, editingRosterIdx: null,
+        isTeamLead: false, teamRoster: [], teamSubmissions: [], teamDrafts: [], viewingTeamMemberId: null,
+        teams: [], positions: [], staff: [], academicYears: [], activeYear: '', adminViewingYear: '', submissionThreshold: 7, coverImage: '', rosters: {}, submissions: [], drafts: []
+    };
+
+    function applyConfig(settingsRows) {
+        const map = {}; settingsRows.forEach(r => map[r.key] = r.value);
+        state.activeYear = map['ActiveYear'] || '';
+        state.teams = JSON.parse(map['Teams'] || '[]');
+        state.positions = JSON.parse(map['Positions'] || '[]');
+        if (state.positions.length === 0) state.positions = DEFAULT_POSITIONS;
+        state.positions = state.positions.map(p => ({ ...p, receivesEmails: p.receivesEmails !== false, ccOnTeamEmails: p.ccOnTeamEmails === true }));
+        state.staff = JSON.parse(map['Staff'] || '[]');
+        state.academicYears = JSON.parse(map['AcademicYears'] || '[]');
+        state.submissionThreshold = parseInt(map['SubmissionThreshold']) || 7;
+        state.coverImage = map['CoverImage'] || 'https://i.imgur.com/BgYlUtX.jpeg';
+        
+        document.getElementById('loginActiveYear').textContent = state.activeYear;
+        const banner = document.getElementById('loginBannerImg');
+        if (banner) banner.style.backgroundImage = `url('${state.coverImage}')`;
+    }
+
+    async function init() {
+        document.getElementById('year').textContent = new Date().getFullYear();
+        lucide.createIcons();
+        switchView('login');
+        
+        gsap.fromTo(".pro-card", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
+
+        const adminFilter = document.getElementById('adminWeekFilter');
+        if (adminFilter && (todayDate.getDay() === 1 || todayDate.getDay() === 2)) adminFilter.value = 'previous';
+
+        let usedCache = false;
+        try {
+            const cached = localStorage.getItem(CONFIG_CACHE_KEY);
+            if (cached) {
+                const { data, ts } = JSON.parse(cached);
+                if (Date.now() - ts < CONFIG_CACHE_TTL && data.length) { applyConfig(data); usedCache = true; }
+            }
+        } catch (e) {}
+
+        try {
+            const rows = await gasFetch('get_settings');
+            applyConfig(rows);
+            localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ data: rows, ts: Date.now() }));
+        } catch (e) { if (!usedCache) showToast("Could not load database. Make sure Google Script URL is correct.", true); }
+
+        const rememberedId = localStorage.getItem(REMEMBERED_STUDENT_KEY);
+        if (rememberedId) { document.getElementById('loginStudentID').value = rememberedId; studentLogin(rememberedId); }
+    }
+
+    function switchView(viewName) {
+        state.view = viewName;
+        document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); v.style.display = 'none'; });
+        const target = document.getElementById(viewName + 'View');
+        if (target) {
+            target.style.display = 'block';
+            setTimeout(() => target.classList.add('active'), 10);
+            gsap.fromTo(target, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3 });
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    const REMEMBERED_STUDENT_KEY = 'ts_remembered_student_id';
+
+    async function studentLogin(idOverride) {
+        const idInput = (idOverride != null ? idOverride : document.getElementById('loginStudentID').value).trim();
+        if(!idInput) return showToast("Please enter your Student ID", true);
+        const btn = document.getElementById('loginBtn'); const loader = document.getElementById('loginLoader');
+        btn.disabled = true; loader.style.display = 'inline-block';
+
+        try {
+            const res = await gasFetch('student_login', { student_id: idInput });
+            const rosterRows = res.roster;
+            const subRows = res.submissions;
+            const draftRows = res.drafts;
+
+            if (!rosterRows.length) {
+                if (idOverride != null) localStorage.removeItem(REMEMBERED_STUDENT_KEY);
+                showToast('Student ID not found.', true); return;
+            }
+
+            localStorage.setItem(REMEMBERED_STUDENT_KEY, idInput);
+            const row = rosterRows[0];
+            state.currentUser = { id: row.student_id, name: row.name, team: row.team, email: row.email, position: row.position };
+            state.studentPastSubmissions = subRows.map(s => s.week_identifier);
+            state.studentSubmissions = subRows.map(s => ({ academicYear: s.academic_year, studentId: s.student_id, studentName: s.student_name, team: s.team, weekIdentifier: s.week_identifier, totalHours: s.total_hours, logs: JSON.parse(s.logs_json || '[]') }));
+
+            document.getElementById('ts-greeting').textContent = `Hello ${state.currentUser.name.split(' ')[0]},`;
+            document.getElementById('ts-team').textContent = state.currentUser.team || 'No Team';
+            document.getElementById('ts-position').textContent = state.currentUser.position || 'Student';
+
+            const userPosition = state.positions.find(p => p.name === state.currentUser.position);
+            const reqHours = userPosition ? userPosition.minHours : 0;
+            const reqHoursEl = document.getElementById('ts-reqHours');
+            if (reqHours > 0) { reqHoursEl.textContent = `/ ${reqHours} required`; reqHoursEl.style.display = 'inline-block'; } 
+            else { reqHoursEl.style.display = 'none'; }
+
+            state.isTeamLead = (state.currentUser.position || '').toLowerCase().includes('director');
+            const teamBtn = document.getElementById('teamHoursBtn');
+            if (state.isTeamLead) { teamBtn.classList.remove('hidden'); teamBtn.classList.add('flex'); } 
+            else { teamBtn.classList.add('hidden'); teamBtn.classList.remove('flex'); }
+
+            const currentDraft = draftRows.find(d => d.week_identifier === CURRENT_WEEK_ID_AZ);
+            const staleDrafts = draftRows.filter(d => d.week_identifier !== CURRENT_WEEK_ID_AZ);
+            for (const draft of staleDrafts) {
+                const logs = JSON.parse(draft.logs_json || '[]');
+                if (!state.studentPastSubmissions.includes(draft.week_identifier) && logs.length > 0) {
+                    await autoSubmitWeekDraft(draft.week_identifier, logs);
+                    state.studentPastSubmissions.push(draft.week_identifier);
+                }
+            }
+
+            if (currentDraft) {
+                const draftLogs = JSON.parse(currentDraft.logs_json || '[]');
+                if (draftLogs.length > 0) localStorage.setItem(`ts_pending_${state.currentUser.id}`, JSON.stringify(draftLogs));
+            }
+
+            const pendingRaw = localStorage.getItem(`ts_pending_${state.currentUser.id}`);
+            if (pendingRaw) {
+                try {
+                    const pendingEntries = JSON.parse(pendingRaw);
+                    if (Array.isArray(pendingEntries) && pendingEntries.length > 0) {
+                        const freshEntries = pendingEntries.filter(e => e.date >= CURRENT_WEEK_ID_AZ);
+                        if (freshEntries.length !== pendingEntries.length) {
+                            if (freshEntries.length > 0) localStorage.setItem(`ts_pending_${state.currentUser.id}`, JSON.stringify(freshEntries));
+                            else localStorage.removeItem(`ts_pending_${state.currentUser.id}`);
+                        }
+                    }
+                } catch(e) { localStorage.removeItem(`ts_pending_${state.currentUser.id}`); }
+            }
+
+            initTimesheetView(); switchView('timesheet'); document.getElementById('loginStudentID').value = '';
+        } catch (e) { showToast('Error: ' + e.message, true); } finally { btn.disabled = false; loader.style.display = 'none'; }
+    }
+
+    function setupDateRestrictions() {
+        const dateInput = document.getElementById('entryDate');
+        const todayAZ = getAZDateStr(); dateInput.min = CURRENT_WEEK_ID_AZ; dateInput.max = todayAZ;
+        if (!dateInput.value || dateInput.value < dateInput.min || dateInput.value > dateInput.max) dateInput.value = todayAZ;
+    }
+    function isWeekSubmitted() { return (state.studentPastSubmissions || []).includes(CURRENT_WEEK_ID_AZ); }
+
+    function initTimesheetView() {
+        const savedData = localStorage.getItem(`ts_pending_${state.currentUser.id}`);
+        state.currentWeekEntries = savedData ? JSON.parse(savedData) : [];
+        setupDateRestrictions(); cancelEdit(); renderTimesheetEntries();
+        const submitted = isWeekSubmitted();
+        document.getElementById('entryFormBox').classList.toggle('hidden', submitted);
+        document.getElementById('submittedNotice').classList.toggle('hidden', !submitted);
+        const weekLabel = document.getElementById('ts-weekLabel');
+        if (submitted) {
+            weekLabel.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 inline"></i> Submitted`;
+            weekLabel.className = 'text-green-700 bg-green-100 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border border-green-200';
+        } else {
+            weekLabel.textContent = 'Current Week';
+            weekLabel.className = 'text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 text-[10px] uppercase font-bold tracking-wider';
+        }
+        lucide.createIcons();
+    }
+
+    // Smooth Parallax "Window" Effect for Login Banner
+    window.addEventListener('scroll', () => {
+        if (state.view === 'login') {
+            const banner = document.getElementById('loginBannerImg');
+            if (banner) {
+                const scrolled = window.scrollY;
+                // Scale 1.15 gives enough bleed edge to prevent white gaps during the parallax translation
+                banner.style.transform = `translate3d(0, ${scrolled * 0.25}px, 0) scale(1.15)`;
+            }
+        }
+    }, { passive: true });
+
+    setInterval(async () => {
+        if (!state.currentUser) return;
+        if (getWeekIdentifier(getAZDateStr()) !== CURRENT_WEEK_ID_AZ) {
+            if (!isWeekSubmitted() && state.currentWeekEntries.length > 0) await autoSubmitWeekDraft(CURRENT_WEEK_ID_AZ, state.currentWeekEntries);
+            state.currentWeekEntries = []; localStorage.removeItem(`ts_pending_${state.currentUser.id}`); window.location.reload();
+        }
+    }, 30000);
+
+    function flashAutosave() {
+        const el = document.getElementById('autosaveIndicator'); el.classList.remove('hidden', 'saved-flash');
+        void el.offsetWidth; el.classList.add('saved-flash'); el.addEventListener('animationend', () => el.classList.add('hidden'), { once: true });
+    }
+
+    function saveTimeEntry() {
+        const date = document.getElementById('entryDate').value; const hours = parseFloat(document.getElementById('entryHours').value); const task = document.getElementById('entryTask').value.trim();
+        if(!date || !hours || !task) return showToast("Please fill out Date, Hours, and Task.", true);
+        const dateVal = new Date(date + 'T00:00:00').getTime();
+        if(dateVal < new Date(document.getElementById('entryDate').min + 'T00:00:00').getTime() || dateVal > new Date(document.getElementById('entryDate').max + 'T00:00:00').getTime()) return showToast("Date outside allowed window.", true);
+
+        if (state.editingEntryId) {
+            const idx = state.currentWeekEntries.findIndex(e => e.id === state.editingEntryId);
+            if(idx !== -1) { state.currentWeekEntries[idx] = { id: state.editingEntryId, date, hours, task }; showToast("Entry updated"); }
+            cancelEdit(); 
+        } else {
+            state.currentWeekEntries.push({ id: Date.now(), date, hours, task }); showToast("Hours added");
+            document.getElementById('entryHours').value = ""; document.getElementById('entryTask').value = "";
+        }
+        localStorage.setItem(`ts_pending_${state.currentUser.id}`, JSON.stringify(state.currentWeekEntries));
+        saveDraftToServer(); flashAutosave(); renderTimesheetEntries();
+    }
+
+    function editEntry(id) {
+        const entry = state.currentWeekEntries.find(e => e.id === id); if(!entry) return;
+        state.editingEntryId = id;
+        document.getElementById('entryDate').value = entry.date; document.getElementById('entryHours').value = entry.hours; document.getElementById('entryTask').value = entry.task;
+        document.getElementById('formModeTitle').innerHTML = '<i data-lucide="edit-2" class="w-4 h-4 text-blue-500"></i> Edit Logged Hours';
+        document.getElementById('entryFormBox').classList.add('border-blue-200', 'bg-blue-50');
+        const saveBtn = document.getElementById('saveEntryBtn');
+        saveBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700', 'border-transparent');
+        document.getElementById('saveEntryText').textContent = "Update Entry";
+        document.getElementById('saveEntryIcon').setAttribute('data-lucide', 'save'); document.getElementById('saveEntryIcon').classList.replace('text-gcu-600', 'text-white');
+        document.getElementById('cancelEditBtn').classList.remove('hidden'); document.getElementById('cancelEditBtn').classList.add('flex');
+        lucide.createIcons(); document.getElementById('entryFormBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function cancelEdit() {
+        state.editingEntryId = null;
+        document.getElementById('entryDate').valueAsDate = new Date(); document.getElementById('entryHours').value = ""; document.getElementById('entryTask').value = "";
+        document.getElementById('formModeTitle').innerHTML = '<i data-lucide="clock" class="w-4 h-4 text-gcu-600"></i> Log New Hours';
+        document.getElementById('entryFormBox').classList.remove('border-blue-200', 'bg-blue-50');
+        const saveBtn = document.getElementById('saveEntryBtn');
+        saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'border-transparent');
+        document.getElementById('saveEntryText').textContent = "Add to Week";
+        document.getElementById('saveEntryIcon').setAttribute('data-lucide', 'plus');
+        document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('cancelEditBtn').classList.remove('flex');
+        lucide.createIcons();
+    }
+
+    function removeEntry(id) {
+        if(state.editingEntryId === id) cancelEdit();
+        state.currentWeekEntries = state.currentWeekEntries.filter(e => e.id !== id);
+        localStorage.setItem(`ts_pending_${state.currentUser.id}`, JSON.stringify(state.currentWeekEntries));
+        saveDraftToServer(); flashAutosave(); renderTimesheetEntries();
+    }
+
+    function saveDraftToServer() {
+        if (!state.currentUser) return;
+        gasFetch('save_draft', {
+            student_id: state.currentUser.id,
+            week_identifier: CURRENT_WEEK_ID_AZ,
+            data: {
+                student_id: state.currentUser.id,
+                week_identifier: CURRENT_WEEK_ID_AZ,
+                logs_json: JSON.stringify(state.currentWeekEntries),
+                last_updated: new Date().toISOString()
+            }
+        }).catch(() => {});
+    }
+
+    async function autoSubmitWeekDraft(weekId, entries) {
+        if (!state.currentUser || !entries || entries.length === 0) return;
+        try {
+            await gasFetch('submit_week', {
+                data: {
+                    academic_year: state.activeYear,
+                    student_id: state.currentUser.id,
+                    student_name: state.currentUser.name,
+                    team: state.currentUser.team,
+                    week_identifier: weekId,
+                    total_hours: entries.reduce((s, e) => s + Number(e.hours), 0),
+                    logs_json: JSON.stringify(entries)
+                }
+            });
+        } catch (e) {}
+    }
+
+    function renderTimesheetEntries() {
+        const list = document.getElementById('ts-entriesList'); const totalEl = document.getElementById('ts-totalHours');
+        if(state.currentWeekEntries.length === 0) {
+            list.innerHTML = `<div class="text-gray-400 text-xs py-5 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">No hours logged yet.</div>`;
+            totalEl.textContent = "0.0"; checkStudentProgress(0); return;
+        }
+        let total = 0;
+        list.innerHTML = state.currentWeekEntries.map(entry => {
+            total += entry.hours; const dateStr = new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            return `
+            <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 gap-3 transition-colors hover:border-gray-300 shadow-sm group">
+                <div class="flex items-center gap-3 overflow-hidden flex-1">
+                    <div class="bg-gray-50 text-gcu-600 font-bold px-3 py-2 rounded-lg text-center min-w-[3.5rem] shrink-0 border border-gray-100">${entry.hours}</div>
+                    <div class="flex flex-col overflow-hidden">
+                        <div class="text-gray-900 font-medium text-sm truncate mb-0.5">${escapeHTML(entry.task)}</div>
+                        <div class="text-gray-500 text-[10px] uppercase font-bold tracking-wider">${dateStr}</div>
+                    </div>
+                </div>
+                <div class="flex shrink-0 gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="text-gray-400 hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition" onclick="editEntry(${entry.id})"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                    <button class="text-gray-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition" onclick="removeEntry(${entry.id})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>`;
+        }).join('');
+        totalEl.textContent = total.toFixed(1); checkStudentProgress(total); lucide.createIcons();
+    }
+
+    function checkStudentProgress(totalHours) {
+        if (!state.currentUser) return;
+        const reqHours = state.positions.find(p => p.name === state.currentUser.position)?.minHours || 0;
+        const totalEl = document.getElementById('ts-totalHours');
+        totalEl.classList.remove('text-green-600', 'text-amber-500', 'text-gcu-600');
+        if (reqHours > 0) {
+            if (totalHours >= reqHours) totalEl.classList.add('text-green-600');
+            else if (totalHours > 0) totalEl.classList.add('text-amber-500');
+            else totalEl.classList.add('text-gcu-600');
+        } else { totalEl.classList.add('text-gcu-600'); }
+    }
+
+    function showHistory() {
+        document.getElementById('history-team').textContent = `${state.currentUser.position || 'Student'} • ${state.currentUser.team}`;
+        const grouped = {}; let totalAllTime = 0;
+        (state.studentSubmissions || []).forEach(sub => {
+            (sub.logs || []).forEach(log => {
+                totalAllTime += parseFloat(log.hours) || 0;
+                const weekId = getWeekIdentifier(log.date);
+                if (!grouped[weekId]) grouped[weekId] = { hours: 0, logs: [] };
+                grouped[weekId].hours += parseFloat(log.hours) || 0; grouped[weekId].logs.push(log);
+            });
+        });
+        document.getElementById('history-total').textContent = totalAllTime.toFixed(1);
+        const list = document.getElementById('history-list');
+        if (Object.keys(grouped).length === 0) { list.innerHTML = `<div class="text-gray-400 text-xs py-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">No submissions found.</div>`; switchView('history'); return; }
+
+        list.innerHTML = Object.keys(grouped).sort((a, b) => b.localeCompare(a)).map(weekId => {
+            const logsHtml = grouped[weekId].logs.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).map(log => {
+                const dateStr = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                return `
+                    <div class="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm">
+                        <div class="bg-gray-50 text-gcu-600 font-bold px-2 py-1.5 rounded text-xs min-w-[2.5rem] text-center border border-gray-100">${log.hours}</div>
+                        <div class="flex flex-col overflow-hidden">
+                            <div class="text-gray-900 font-medium text-xs truncate">${escapeHTML(log.task)}</div>
+                            <div class="text-gray-500 text-[9px] uppercase font-bold tracking-wider">${dateStr}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+            return `
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div class="flex justify-between items-center p-3.5 border-b border-gray-100 bg-gray-50">
+                        <span class="text-sm font-bold text-gray-800 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i> ${formatWeekRange(weekId)}</span>
+                        <span class="text-xs font-bold px-2 py-1 bg-white text-gray-700 rounded border border-gray-200">${grouped[weekId].hours.toFixed(1)} hrs</span>
+                    </div>
+                    <div class="p-3.5 flex flex-col gap-2 bg-gray-50/50">${logsHtml}</div>
+                </div>`;
+        }).join('');
+        switchView('history'); lucide.createIcons();
+    }
+
+    function logout() {
+        state.currentUser = null; state.currentWeekEntries = []; localStorage.removeItem(REMEMBERED_STUDENT_KEY);
+        document.getElementById('teamHoursBtn')?.classList.add('hidden'); switchView('login');
+    }
+
+    async function fetchTeamOversightData() {
+        if (!state.isTeamLead || !state.currentUser) return;
+        try {
+            const res = await gasFetch('get_team_oversight', {
+                team: state.currentUser.team,
+                academic_year: state.activeYear
+            });
+            const rosterRows = res.roster;
+            const subRows = res.submissions;
+            const draftRows = res.drafts;
+            
+            state.teamRoster = rosterRows.map(r => ({ id: r.student_id, name: r.name, team: r.team, position: r.position }));
+            state.teamSubmissions = subRows.map(s => ({ studentId: s.student_id, logs: JSON.parse(s.logs_json || '[]') }));
+            state.teamDrafts = draftRows.map(d => ({ studentId: d.student_id, logs: JSON.parse(d.logs_json || '[]') }));
+        } catch (e) { showToast('Could not load team hours', true); }
+    }
+
+    async function showTeamView() {
+        if (!state.isTeamLead) return;
+        document.getElementById('team-teamName').textContent = state.currentUser.team;
+        await fetchTeamOversightData(); renderTeamView(); switchView('team');
+    }
+
+    function renderTeamView() {
+        const weekFilterVal = document.getElementById('teamWeekFilter').value;
+        const targetMonday = weekFilterVal === 'current' ? currentMonday : prevMonday;
+        const targetSunday = weekFilterVal === 'current' ? currentSunday : prevSunday;
+        
+        if (!state.teamRoster?.length) return document.getElementById('team-memberList').innerHTML = `<div class="text-gray-400 text-xs py-6 text-center">No team members.</div>`;
+
+        document.getElementById('team-memberList').innerHTML = state.teamRoster.map(student => {
+            let weekHours = 0;
+            (state.teamSubmissions || []).filter(s => s.studentId === student.id).forEach(sub => {
+                weekHours += (sub.logs || []).filter(log => { const d = new Date(log.date + 'T00:00:00'); return d >= targetMonday && d <= targetSunday; }).reduce((sum, l) => sum + Number(l.hours), 0);
+            });
+            let pendingHours = 0;
+            if (weekFilterVal === 'current') pendingHours = (state.teamDrafts || []).find(d => d.studentId === student.id)?.logs.reduce((sum, l) => sum + Number(l.hours), 0) || 0;
+
+            const reqHours = state.positions.find(p => p.name === student.position)?.minHours || 0;
+            const hasEverSubmitted = (state.teamSubmissions || []).some(s => s.studentId === student.id);
+            let statusClass = "bg-gray-100 text-gray-500 border border-gray-200";
+            if (reqHours > 0) {
+                if (weekHours >= reqHours) statusClass = "bg-green-100 text-green-700 border border-green-200";
+                else if (weekHours > 0) statusClass = "bg-amber-100 text-amber-700 border border-amber-200";
+                else if (hasEverSubmitted) statusClass = "bg-red-50 text-red-600 border border-red-200";
+            } else if (weekHours > 0) statusClass = "bg-blue-50 text-blue-600 border border-blue-200";
+
+            return `
+                <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg px-2 transition group" onclick="viewTeamMemberDetails('${student.id}')">
+                    <div class="flex flex-col flex-1 min-w-0">
+                        <span class="text-sm font-semibold text-gray-900 truncate">${escapeHTML(student.name)}</span>
+                        <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider truncate">${escapeHTML(student.position || 'Student')}</span>
+                    </div>
+                    <div class="flex flex-col items-end gap-1 shrink-0">
+                        <span class="text-xs font-bold px-2 py-1 rounded ${statusClass}">${weekHours.toFixed(1)} hrs</span>
+                        ${pendingHours > 0 ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-widest">+${pendingHours.toFixed(1)} pending</span>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function showGate() { 
+        document.getElementById('gateModal').style.display = 'flex'; document.getElementById('gateModal').classList.remove('hidden'); 
+        gsap.fromTo("#gateBackdrop", { opacity: 0 }, { opacity: 1, duration: 0.2 });
+        gsap.fromTo("#gateCard", { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3 });
+    }
+    function hideGate() { 
+        gsap.to("#gateModal", {opacity: 0, duration: 0.2, onComplete: () => { document.getElementById('gateModal').style.display = 'none'; document.getElementById('gateModal').classList.add('hidden'); document.getElementById('gateModal').style.opacity = '1'; document.getElementById('adminPass').value = ""; }});
+    }
+
+    async function verifyAdmin() {
+        const pass = document.getElementById('adminPass').value; if(!pass) return;
+        const btn = document.getElementById('gateBtn'); const loader = document.getElementById('gateLoader');
+        btn.disabled = true; loader.style.display = 'inline-block';
+        try {
+            const data = await gasFetch('admin_login', { password: pass });
+            state.submissions = data.submissions.map(s => ({ academicYear: s.academic_year, studentId: s.student_id, studentName: s.student_name, team: s.team, weekIdentifier: s.week_identifier, totalHours: s.total_hours, logs: JSON.parse(s.logs_json || '[]') }));
+            state.drafts = data.drafts.map(d => ({ studentId: d.student_id, weekIdentifier: d.week_identifier, logs: JSON.parse(d.logs_json || '[]') }));
+            state.rosters = {};
+            data.roster.forEach(r => { if (!state.rosters[r.academic_year]) state.rosters[r.academic_year] = []; state.rosters[r.academic_year].push({ id: r.student_id, name: r.name, team: r.team, email: r.email, position: r.position }); });
+            state.adminViewingYear = state.activeYear;
+            
+            document.getElementById('setCoverImage').value = state.coverImage;
+            document.getElementById('setSubmitThreshold').value = state.submissionThreshold;
+
+            hideGate(); renderSettingsManager(); renderDashboard(); switchView('dashboard');
+        } catch (e) { showToast('Incorrect Password', true); } finally { btn.disabled = false; loader.style.display = 'none'; }
+    }
+
+    function renderDashboard() {
+        const yearFilterVal = document.getElementById('adminYearFilter').value;
+        const weekFilterVal = document.getElementById('adminWeekFilter').value;
+        const targetMonday = weekFilterVal === 'current' ? currentMonday : prevMonday;
+        const targetSunday = weekFilterVal === 'current' ? currentSunday : prevSunday;
+        let totalActive = 0;
+
+        document.getElementById('admin-teamCards').innerHTML = state.teams.map(teamName => {
+            const teamRoster = (state.rosters[yearFilterVal] || []).filter(r => r.team === teamName);
+            let teamTotal = 0;
+            const html = teamRoster.length ? teamRoster.map(student => {
+                let weekHours = 0;
+                state.submissions.filter(s => s.studentId === student.id && s.academicYear === yearFilterVal).forEach(sub => {
+                    weekHours += sub.logs.filter(log => { const d = new Date(log.date + 'T00:00:00'); return d >= targetMonday && d <= targetSunday; }).reduce((sum, l) => sum + l.hours, 0);
+                });
+                let pendingHours = 0;
+                if (weekFilterVal === 'current') pendingHours = (state.drafts || []).find(d => d.studentId === student.id)?.logs.reduce((sum, l) => sum + Number(l.hours), 0) || 0;
+                
+                teamTotal += weekHours; if (weekHours > 0) totalActive++;
+                
+                const reqHours = state.positions.find(p => p.name === student.position)?.minHours || 0;
+                const hasSub = state.submissions.some(s => s.studentId === student.id);
+                let status = "bg-gray-100 text-gray-500 border border-gray-200";
+                if (reqHours > 0) { if (weekHours >= reqHours) status = "bg-green-100 text-green-700 border border-green-200"; else if (weekHours > 0) status = "bg-amber-100 text-amber-700 border border-amber-200"; else if (hasSub) status = "bg-red-50 text-red-600 border border-red-200"; } 
+                else if (weekHours > 0) status = "bg-blue-50 text-blue-600 border border-blue-200";
+
+                return `
+                    <div class="flex justify-between items-center py-2.5 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-2 transition group" onclick="viewStudentDetails('${student.id}')">
+                        <div class="flex flex-col flex-1 min-w-0">
+                            <span class="text-sm font-medium text-gray-800 truncate">${escapeHTML(student.name)}</span>
+                            <span class="text-[10px] text-gray-400 uppercase font-bold truncate">${escapeHTML(student.position || 'Student')}</span>
+                        </div>
+                        <div class="flex flex-col items-end gap-1 shrink-0">
+                            <span class="text-xs font-bold px-2 py-0.5 rounded ${status}">${weekHours.toFixed(1)}</span>
+                            ${pendingHours > 0 ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200">+${pendingHours.toFixed(1)} p</span>` : ''}
+                        </div>
+                    </div>`;
+            }).join('') : '<div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest py-3 text-center">Empty Team</div>';
+
+            return `
+                <div class="pro-card flex flex-col bg-white overflow-hidden shadow-sm !border-t-0">
+                    <div class="p-4 bg-gcu-600 flex justify-between items-center text-white rounded-t-lg">
+                        <span class="font-bold truncate flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 opacity-80"></i> ${escapeHTML(teamName)}</span>
+                        <span class="text-lg font-black">${teamTotal.toFixed(1)}</span>
+                    </div>
+                    <div class="p-3 flex-1 flex flex-col max-h-[250px] overflow-y-auto custom-scroll">${html}</div>
+                </div>`;
+        }).join('');
+
+        const ind = document.getElementById('weekStatusIndicator');
+        if (totalActive >= state.submissionThreshold) ind.innerHTML = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] uppercase font-bold flex items-center gap-1 border border-green-200"><i data-lucide="activity" class="w-3 h-3"></i> Active (${totalActive}/${state.submissionThreshold})</span>`;
+        else ind.innerHTML = `<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] uppercase font-bold flex items-center gap-1 border border-amber-200"><i data-lucide="moon" class="w-3 h-3"></i> Break (${totalActive}/${state.submissionThreshold})</span>`;
+        lucide.createIcons();
+    }
+
+    function renderSettingsManager() {
+        const renderList = (id, arr, htmlFn) => { document.getElementById(id).innerHTML = arr.map(htmlFn).join(''); };
+        renderList('settings-teamList', state.teams, (t, i) => `<div class="flex items-center justify-between bg-white p-2 border border-gray-200 rounded-lg mb-1 shadow-sm"><span class="text-sm font-medium text-gray-700">${escapeHTML(t)}</span><button class="text-gray-400 hover:text-red-500 transition-colors" onclick="removeTeam(${i})"><i data-lucide="x" class="w-3.5 h-3.5"></i></button></div>`);
+        renderList('settings-positionList', state.positions, (p, i) => `
+            <div class="flex items-center justify-between bg-white p-2 border border-gray-200 rounded-lg mb-1 shadow-sm">
+                <div class="flex flex-col gap-1">
+                    <span class="text-sm font-bold text-gray-700">${escapeHTML(p.name)} <span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded ml-1 border border-gray-200 font-bold">${p.minHours}h</span></span>
+                    <div class="flex gap-1">
+                        ${p.receivesEmails !== false ? '<span class="text-[8px] bg-blue-50 text-blue-600 border border-blue-200 px-1 rounded uppercase font-bold tracking-widest">Gets Emails</span>' : '<span class="text-[8px] bg-gray-50 text-gray-500 border border-gray-200 px-1 rounded uppercase font-bold tracking-widest line-through">No Emails</span>'}
+                        ${p.ccOnTeamEmails ? '<span class="text-[8px] bg-amber-50 text-amber-600 border border-amber-200 px-1 rounded uppercase font-bold tracking-widest">CC\'d on Team</span>' : ''}
+                    </div>
+                </div>
+                <button class="text-gray-400 hover:text-red-500 transition-colors shrink-0" onclick="removePosition(${i})"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>`);
+        
+        const staffList = document.getElementById('settings-staffList'); document.getElementById('staffCount').textContent = state.staff.length;
+        staffList.innerHTML = state.staff.map((s, idx) => `
+            <div class="flex flex-col bg-white p-3 rounded-xl border border-gray-200 gap-1.5 shadow-sm mb-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-800 font-bold">${escapeHTML(s.name)}</span>
+                    <button class="text-gray-400 hover:text-red-500 transition-colors" onclick="removeStaff(${idx})"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>
+                <div class="text-[11px] text-gray-500 font-medium">${escapeHTML(s.email)}</div>
+                <div class="text-[9px] text-gcu-600 mt-1 uppercase font-bold tracking-widest bg-gcu-50 px-2 py-1 rounded border border-gcu-100 w-fit">${s.teams.join(', ')}</div>
+            </div>`).join('');
+
+        renderList('settings-yearList', state.academicYears, y => `<div class="flex items-center justify-between p-2 rounded-lg mb-1 shadow-sm ${state.activeYear===y?'bg-gcu-50 border border-gcu-200':'bg-white border border-gray-200'}"><span class="text-sm font-medium ${state.activeYear===y?'text-gcu-700':'text-gray-700'}">${escapeHTML(y)} ${state.activeYear===y?'(Active)':''}</span><div class="flex gap-2">${state.activeYear!==y?`<button class="text-[10px] font-bold uppercase text-gray-500 hover:text-gcu-600 transition-colors" onclick="setActiveYear('${y}')">Set Active</button>`:''}<button class="text-gray-400 hover:text-red-500 transition-colors" onclick="removeYear('${y}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div></div>`);
+        
+        ['teamCount', 'positionCount', 'yearCount'].forEach((id, i) => document.getElementById(id).textContent = [state.teams, state.positions, state.academicYears][i].length);
+        document.getElementById('settingsRosterYear').innerHTML = state.academicYears.map(y => `<option value="${escapeHTML(y)}">${escapeHTML(y)}</option>`).join('');
+        document.getElementById('settingsRosterYear').value = state.adminViewingYear;
+        document.getElementById('adminYearFilter').innerHTML = document.getElementById('settingsRosterYear').innerHTML;
+        document.getElementById('adminYearFilter').value = state.activeYear;
+        
+        ['newStudTeam', 'newStudPosition'].forEach(id => {
+            document.getElementById(id).innerHTML = `<option value="">Select ${id.includes('Team')?'Team':'Position'}...</option>` + (id.includes('Team')?state.teams:state.positions.map(p=>p.name)).map(x => `<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`).join('');
+        });
+        
+        const staffTeamSelect = document.getElementById('newStaffTeams');
+        staffTeamSelect.innerHTML = state.teams.map(t => `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`).join('');
+
+        renderRoster(); lucide.createIcons();
+    }
+
+    function renderRoster() {
+        const list = document.getElementById('admin-rosterList'); const roster = state.rosters[state.adminViewingYear] || [];
+        if(!roster.length) { list.innerHTML = `<div class="text-gray-400 text-xs py-5 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 mt-2">No students.</div>`; return; }
+        list.innerHTML = roster.map((s, i) => `
+            <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 mb-2 shadow-sm">
+                <div class="flex flex-col min-w-0">
+                    <span class="text-gray-900 font-bold text-sm truncate">${escapeHTML(s.name)}</span>
+                    <span class="text-gray-500 text-[10px] truncate mb-1">${escapeHTML(s.email||'')}</span>
+                    <div class="flex gap-1.5 flex-wrap">
+                        <span class="bg-gray-100 text-gray-600 text-[9px] px-1.5 py-0.5 rounded font-bold border border-gray-200">ID: ${s.id}</span>
+                        <span class="bg-purple-50 text-gcu-600 text-[9px] px-1.5 py-0.5 rounded font-bold border border-purple-100">${escapeHTML(s.position)}</span>
+                        ${s.team ? `<span class="bg-gcu-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold border border-gcu-700">${escapeHTML(s.team)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="flex gap-1 shrink-0">
+                    <button class="text-gray-400 hover:text-blue-600 p-2 transition-colors" onclick="startEditRoster(${i})"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                    <button class="text-gray-400 hover:text-red-600 p-2 transition-colors" onclick="removeStudent(${i})"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>`).join('');
+        lucide.createIcons();
+    }
+
+    function changeRosterYear() { state.adminViewingYear = document.getElementById('settingsRosterYear').value; renderRoster(); }
+    function setActiveYear(y) { state.activeYear = y; document.getElementById('loginActiveYear').textContent = y; renderSettingsManager(); showToast(`Active Year changed to ${y}`); }
+    function addTeam() { const v = document.getElementById('newTeamInput').value.trim(); if(v && !state.teams.includes(v)) { state.teams.push(v); document.getElementById('newTeamInput').value=""; renderSettingsManager(); renderDashboard(); showToast("Team Added"); } }
+    function removeTeam(i) { state.teams.splice(i,1); renderSettingsManager(); renderDashboard(); }
+    
+    function addPosition() { 
+        const n = document.getElementById('newPosName').value.trim();
+        const h = parseFloat(document.getElementById('newPosHours').value);
+        const e = document.getElementById('newPosEmails').checked;
+        const c = document.getElementById('newPosCC').checked;
+        if(n && !isNaN(h) && !state.positions.find(p=>p.name===n)) { 
+            state.positions.push({name:n, minHours:h, receivesEmails:e, ccOnTeamEmails:c}); 
+            document.getElementById('newPosName').value=""; 
+            document.getElementById('newPosHours').value=""; 
+            document.getElementById('newPosEmails').checked=true;
+            document.getElementById('newPosCC').checked=false;
+            renderSettingsManager(); renderDashboard(); showToast("Position Added"); 
+        } 
+    }
+    function removePosition(i) { state.positions.splice(i,1); renderSettingsManager(); renderDashboard(); }
+    
+    function addYear() { const v = document.getElementById('newYearInput').value.trim(); if(v && !state.academicYears.includes(v)) { state.academicYears.push(v); state.rosters[v]=[]; document.getElementById('newYearInput').value=""; renderSettingsManager(); showToast("Year Added"); } }
+    function removeYear(y) { if(state.activeYear!==y){ state.academicYears=state.academicYears.filter(x=>x!==y); delete state.rosters[y]; if(state.adminViewingYear===y)state.adminViewingYear=state.activeYear; renderSettingsManager(); } else { showToast("Cannot remove active year.", true); } }
+
+    function addStaff() {
+        const name = document.getElementById('newStaffName').value.trim();
+        const email = document.getElementById('newStaffEmail').value.trim();
+        const teamsSelect = document.getElementById('newStaffTeams');
+        const selectedTeams = Array.from(teamsSelect.selectedOptions).map(opt => opt.value);
+        
+        if (!name || !email || selectedTeams.length === 0) return showToast("Name, Email, and at least 1 Team required", true);
+        
+        state.staff.push({ id: Date.now(), name, email, teams: selectedTeams });
+        document.getElementById('newStaffName').value = ""; document.getElementById('newStaffEmail').value = "";
+        teamsSelect.selectedIndex = -1;
+        renderSettingsManager(); showToast("Staff Added");
+    }
+    function removeStaff(idx) { state.staff.splice(idx, 1); renderSettingsManager(); }
+
+    function addStudentToRoster() {
+        const id=document.getElementById('newStudID').value.trim(), name=document.getElementById('newStudName').value.trim(), email=document.getElementById('newStudEmail').value.trim(), team=document.getElementById('newStudTeam').value, position=document.getElementById('newStudPosition').value;
+        if(!id||!name||!email||!team||!position) return showToast("Fill all fields", true);
+        if(!state.rosters[state.adminViewingYear]) state.rosters[state.adminViewingYear] = [];
+        if(state.editingRosterIdx!==null) { state.rosters[state.adminViewingYear][state.editingRosterIdx]={id,name,email,team,position}; showToast("Student updated"); cancelRosterEdit(); }
+        else { if(state.rosters[state.adminViewingYear].find(s=>s.id===id)) return showToast("ID exists", true); state.rosters[state.adminViewingYear].push({id,name,email,team,position}); ['ID','Name','Email','Team','Position'].forEach(x=>document.getElementById(`newStud${x}`).value=""); }
+        renderRoster();
+    }
+    function removeStudent(i) { state.rosters[state.adminViewingYear].splice(i,1); if(state.editingRosterIdx===i) cancelRosterEdit(); renderRoster(); }
+    
+    function startEditRoster(i) {
+        const s = state.rosters[state.adminViewingYear][i]; state.editingRosterIdx = i;
+        ['ID','Name','Email','Team','Position'].forEach(x => document.getElementById(`newStud${x}`).value = s[x.toLowerCase()] || '');
+        
+        const titleEl = document.getElementById('addStudFormTitle');
+        titleEl.textContent = 'Edit Student'; 
+        titleEl.classList.add('text-amber-500');
+        document.getElementById('addStudText').textContent = 'Update';
+        document.getElementById('addStudIcon').setAttribute('data-lucide', 'save');
+        
+        const btn = document.getElementById('addStudBtn');
+        btn.classList.remove('btn-primary', 'border-gray-300');
+        btn.classList.add('bg-amber-500', 'text-white', 'hover:bg-amber-600', 'border-transparent');
+        document.getElementById('cancelStudEditBtn').classList.remove('hidden'); document.getElementById('cancelStudEditBtn').classList.add('flex');
+        lucide.createIcons();
+    }
+    function cancelRosterEdit() {
+        state.editingRosterIdx=null; ['ID','Name','Email','Team','Position'].forEach(x => document.getElementById(`newStud${x}`).value="");
+        const titleEl = document.getElementById('addStudFormTitle');
+        titleEl.textContent = 'Add New Student'; 
+        titleEl.classList.remove('text-amber-500');
+        document.getElementById('addStudText').textContent = 'Add to Roster';
+        document.getElementById('addStudIcon').setAttribute('data-lucide', 'user-plus');
+        
+        const btn = document.getElementById('addStudBtn');
+        btn.classList.add('btn-primary');
+        btn.classList.remove('bg-amber-500', 'hover:bg-amber-600', 'border-transparent');
+        document.getElementById('cancelStudEditBtn').classList.add('hidden'); document.getElementById('cancelStudEditBtn').classList.remove('flex');
+        lucide.createIcons();
+    }
+
+    async function saveAdminChanges() {
+        const btn = document.getElementById('saveChangesBtn'), ldr = document.getElementById('saveLoader'); btn.disabled = true; ldr.style.display = 'inline-block';
+        try {
+            const pass = document.getElementById('setNewPass').value.trim();
+            const thr = document.getElementById('setSubmitThreshold').value;
+            const img = document.getElementById('setCoverImage').value.trim();
+            
+            const updates = [
+                {key:'ActiveYear',value:state.activeYear},
+                {key:'Teams',value:JSON.stringify(state.teams)},
+                {key:'Positions',value:JSON.stringify(state.positions)},
+                {key:'Staff',value:JSON.stringify(state.staff)},
+                {key:'AcademicYears',value:JSON.stringify(state.academicYears)},
+                {key:'SubmissionThreshold',value:thr.toString()},
+                {key:'CoverImage',value:img || 'https://i.imgur.com/BgYlUtX.jpeg'}
+            ];
+            if(pass) updates.push({key:'AdminPassword',value:pass});
+            
+            const newRows = [];
+            for (const y in state.rosters) (state.rosters[y]||[]).forEach(s => newRows.push({academic_year:y,student_id:s.id,name:s.name,team:s.team,email:s.email,position:s.position}));
+            
+            await gasFetch('admin_save_settings', { updates: updates, rosterRows: newRows });
+            
+            state.submissionThreshold = parseInt(thr);
+            state.coverImage = img || 'https://i.imgur.com/BgYlUtX.jpeg';
+            if(pass) document.getElementById('setNewPass').value='';
+            
+            document.getElementById('loginBannerImg').style.backgroundImage = `url('${state.coverImage}')`;
+            
+            showToast('Saved to Cloud'); renderDashboard();
+        } catch(e) { showToast('Error saving: ' + e.message, true); } finally { btn.disabled=false; ldr.style.display='none'; }
+    }
+
+    function viewStudentDetails(studentId) {
+        state.viewingStudentId = studentId;
+        const modal = document.getElementById('studentDetailModal');
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        gsap.fromTo(modal.querySelector('.pro-card'), { scale: 0.95, opacity: 0, y: 10 }, { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
+        renderStudentDetails();
+    }
+
+    function renderStudentDetails() {
+        let rosterStudent = null;
+        for (const year in state.rosters) {
+            const found = state.rosters[year].find(s => s.id === state.viewingStudentId);
+            if(found) { rosterStudent = found; break; }
+        }
+        if(!rosterStudent) return;
+
+        const studentSubs = state.submissions.filter(s => s.studentId === state.viewingStudentId && s.academicYear === document.getElementById('adminYearFilter').value);
+        document.getElementById('detailModalName').textContent = rosterStudent.name;
+        document.getElementById('detailModalTeam').textContent = `${rosterStudent.position || 'Student'} • ${rosterStudent.team}`;
+
+        const grouped = {};
+        let totalAllTime = 0;
+        studentSubs.forEach(sub => {
+            if(sub.logs) {
+                sub.logs.forEach(log => {
+                    totalAllTime += log.hours;
+                    const weekId = getWeekIdentifier(log.date);
+                    if(!grouped[weekId]) grouped[weekId] = { hours: 0, logs: [] };
+                    grouped[weekId].hours += log.hours;
+                    grouped[weekId].logs.push(log);
+                });
+            }
+        });
+        
+        document.getElementById('detailModalTotal').textContent = totalAllTime.toFixed(1);
+        const logsContainer = document.getElementById('detailModalLogs');
+        adminCancelEdit();
+
+        const hasAnySubs = Object.keys(grouped).length > 0;
+        const firstSubmissionWeekId = hasAnySubs ? Object.keys(grouped).sort()[0] : currentMonday.toISOString().split('T')[0];
+
+        const sid = rosterStudent.id;
+        const academicYear = document.getElementById('adminYearFilter').value;
+
+        const draftEntry = (state.drafts || []).find(d => d.studentId === sid && d.weekIdentifier === CURRENT_WEEK_ID_AZ);
+        const pendingLogs = draftEntry ? draftEntry.logs : [];
+        const pendingHours = pendingLogs.reduce((sum, l) => sum + Number(l.hours), 0);
+
+        let pendingHtml = '';
+        if (pendingHours > 0) {
+            const sortedPending = [...pendingLogs].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const pendingLogsHtml = sortedPending.map(log => {
+                const dateStr = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                return `
+                    <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-100 flex items-center gap-3 ml-2 mb-2 shadow-sm">
+                        <div class="bg-white text-amber-600 font-bold px-2.5 py-1.5 rounded-lg text-xs min-w-[2.5rem] text-center shrink-0 border border-amber-200">${log.hours}</div>
+                        <div class="flex flex-col overflow-hidden flex-1">
+                            <div class="text-gray-800 font-medium text-xs truncate mb-0.5">${escapeHTML(log.task)}</div>
+                            <div class="text-amber-500 text-[9px] uppercase font-bold tracking-widest">${dateStr}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+            pendingHtml = `
+                <div class="mb-4 bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm font-bold text-gray-800 flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-amber-500 shrink-0"></i> Pending <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200 uppercase font-bold tracking-widest ml-1">Not Yet Submitted</span></span>
+                        <span class="text-xs font-bold px-2.5 py-1 bg-white text-amber-600 rounded-lg border border-amber-200 shrink-0 shadow-sm">${pendingHours.toFixed(1)} hrs</span>
+                    </div>
+                    <div class="border-l-2 border-amber-200 pl-3">${pendingLogsHtml}</div>
+                </div>`;
+        }
+
+        let weeksHtml = '';
+        for (let i = 0; i < 26; i++) {
+            const targetMon = new Date(currentMonday); targetMon.setDate(targetMon.getDate() - (i * 7));
+            const weekId = targetMon.toISOString().split('T')[0];
+            if (weekId < firstSubmissionWeekId) break;
+
+            const weekTitle = formatWeekRange(weekId);
+            const weekData = grouped[weekId];
+
+            let statusBadge = '';
+            if (i === 0) statusBadge = '<span class="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200 uppercase font-bold tracking-widest ml-2">Current</span>';
+            else if (i === 1) statusBadge = '<span class="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 uppercase font-bold tracking-widest ml-2">Prev</span>';
+
+            const addBtn = `<button onclick="adminStartAdd('${sid}','${weekId}')" class="w-full mt-3 text-[10px] font-bold tracking-widest uppercase text-gray-500 hover:text-gcu-600 py-2 bg-gray-50 hover:bg-white border border-dashed border-gray-300 hover:border-gcu-300 rounded-xl transition flex items-center justify-center gap-1.5"><i data-lucide="plus" class="w-3 h-3"></i> Add Entry</button>`;
+
+            if (weekData && weekData.logs.length > 0) {
+                const sortedLogs = [...weekData.logs].sort((a,b) => new Date(b.date) - new Date(a.date));
+                const logsHtml = sortedLogs.map(log => {
+                    const logKey = log.id ? log.id.toString() : `${log.date}_${log.hours}_${log.task}`;
+                    const dateStr = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    return `
+                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex items-center gap-3 ml-2 mb-2 hover:bg-gray-100 transition group shadow-sm">
+                            <div class="bg-white text-gcu-600 font-bold px-2.5 py-1.5 rounded-lg text-xs min-w-[2.5rem] text-center shrink-0 border border-gray-200">${log.hours}</div>
+                            <div class="flex flex-col overflow-hidden flex-1">
+                                <div class="text-gray-800 font-medium text-xs truncate mb-0.5">${escapeHTML(log.task)}</div>
+                                <div class="text-gray-500 text-[9px] uppercase font-bold tracking-widest">${dateStr}</div>
+                            </div>
+                            <div class="flex gap-1 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="adminStartEdit('${sid}','${weekId}','${logKey}')" class="text-blue-500 hover:text-white p-2 bg-white hover:bg-blue-500 rounded-lg transition border border-gray-200 hover:border-blue-500 shadow-sm" title="Edit"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="adminDeleteLog('${sid}','${weekId}','${logKey}')" class="text-red-500 hover:text-white p-2 bg-white hover:bg-red-500 rounded-lg transition border border-gray-200 hover:border-red-500 shadow-sm" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>`;
+                }).join('');
+                weeksHtml += `
+                    <div class="mb-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-sm font-bold text-gray-800 flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-gray-400 shrink-0"></i> ${weekTitle} ${statusBadge}</span>
+                            <span class="text-xs font-bold px-2.5 py-1 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 shrink-0">${weekData.hours.toFixed(1)} hrs</span>
+                        </div>
+                        <div class="border-l-2 border-gray-200 pl-3">${logsHtml}</div>
+                        ${addBtn}
+                    </div>`;
+            } else {
+                weeksHtml += `
+                    <div class="mb-4 bg-gray-50 p-4 rounded-2xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-bold text-gray-500 flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4 text-gray-400 shrink-0"></i> ${weekTitle} ${statusBadge}</span>
+                            <span class="text-[10px] font-bold px-2 py-1 bg-white text-gray-400 rounded-md border border-gray-200 shrink-0 uppercase tracking-widest">0.0 hrs</span>
+                        </div>
+                        ${addBtn}
+                    </div>`;
+            }
+        }
+        logsContainer.innerHTML = pendingHtml + (weeksHtml || `<div class="text-gray-400 text-xs font-bold tracking-widest uppercase py-8 text-center bg-gray-50 rounded-2xl border-dashed border-gray-200 mt-2">No submissions recorded yet.</div>`);
+        lucide.createIcons();
+    }
+
+    function closeStudentDetails() {
+        const modal = document.getElementById('studentDetailModal');
+        gsap.to(modal.querySelector('.pro-card'), { scale: 0.95, opacity: 0, y: 10, duration: 0.2, onComplete: () => {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            state.viewingStudentId = null;
+        }});
+    }
+
+    let adminEditingCtx = null;
+
+    function adminStartEdit(studentId, weekId, logKey) {
+        const sub = state.submissions.find(s => s.studentId === studentId && s.weekIdentifier === weekId);
+        if (!sub || !sub.logs) return;
+        const log = sub.logs.find(l => (l.id ? l.id.toString() : `${l.date}_${l.hours}_${l.task}`) === logKey);
+        if (!log) return;
+        adminEditingCtx = { studentId, weekId, logKey, mode: 'edit' };
+        document.getElementById('adminEditPanelTitle').innerHTML = '<i data-lucide="edit-2" class="w-3.5 h-3.5 inline mr-1"></i> Edit Entry';
+        document.getElementById('adminEditDate').value = log.date;
+        document.getElementById('adminEditHours').value = log.hours;
+        document.getElementById('adminEditTask').value = log.task;
+        
+        const panel = document.getElementById('adminLogEditPanel');
+        panel.classList.remove('hidden');
+        panel.style.overflow = 'hidden';
+        gsap.fromTo(panel, { height: 0, opacity: 0, marginBottom: 0 }, { height: "auto", opacity: 1, marginBottom: 20, duration: 0.3, onComplete: () => { panel.style.overflow = ''; } });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        document.getElementById('adminEditDate').focus();
+        lucide.createIcons();
+    }
+
+    function adminStartAdd(studentId, weekId) {
+        adminEditingCtx = { studentId, weekId, logKey: null, mode: 'add' };
+        document.getElementById('adminEditPanelTitle').innerHTML = '<i data-lucide="plus-circle" class="w-3.5 h-3.5 inline mr-1"></i> Add Entry';
+        document.getElementById('adminEditDate').value = weekId;
+        document.getElementById('adminEditHours').value = '';
+        document.getElementById('adminEditTask').value = '';
+
+        const panel = document.getElementById('adminLogEditPanel');
+        panel.classList.remove('hidden');
+        panel.style.overflow = 'hidden';
+        gsap.fromTo(panel, { height: 0, opacity: 0, marginBottom: 0 }, { height: "auto", opacity: 1, marginBottom: 20, duration: 0.3, onComplete: () => { panel.style.overflow = ''; } });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        document.getElementById('adminEditHours').focus();
+        lucide.createIcons();
+    }
+
+    function adminCancelEdit() {
+        adminEditingCtx = null;
+        const panel = document.getElementById('adminLogEditPanel');
+        if (panel && !panel.classList.contains('hidden')) {
+            panel.style.overflow = 'hidden';
+            gsap.to(panel, { height: 0, opacity: 0, marginBottom: 0, duration: 0.2, onComplete: () => { panel.classList.add('hidden'); panel.style.overflow = ''; } });
+        }
+    }
+
+    async function adminConfirmEdit() {
+        if (!adminEditingCtx) return;
+        const date = document.getElementById('adminEditDate').value;
+        const hours = parseFloat(document.getElementById('adminEditHours').value);
+        const task = document.getElementById('adminEditTask').value.trim();
+        if (!date || isNaN(hours) || hours <= 0 || !task) return showToast('Fill all fields', true);
+
+        const { studentId, weekId, logKey, mode } = adminEditingCtx;
+        const academicYear = document.getElementById('adminYearFilter').value;
+        let sub = state.submissions.find(s => s.studentId === studentId && s.weekIdentifier === weekId && s.academicYear === academicYear);
+
+        if (mode === 'add') {
+            const newLog = { id: Date.now().toString(), date, hours, task };
+            if (sub) {
+                sub.logs = sub.logs || [];
+                sub.logs.push(newLog);
+                sub.totalHours = sub.logs.reduce((s, l) => s + Number(l.hours), 0);
+            } else {
+                const roster = state.rosters[academicYear] || [];
+                const student = roster.find(s => s.id === studentId);
+                if (!student) return showToast('Student not found', true);
+                sub = { academicYear, studentId, studentName: student.name, team: student.team, weekIdentifier: weekId, totalHours: hours, logs: [newLog] };
+                state.submissions.push(sub);
+            }
+        } else {
+            if (!sub || !sub.logs) return showToast('Entry not found', true);
+            const logIdx = sub.logs.findIndex(l => (l.id ? l.id.toString() : `${l.date}_${l.hours}_${l.task}`) === logKey);
+            if (logIdx === -1) return showToast('Entry not found', true);
+            sub.logs[logIdx] = { ...sub.logs[logIdx], date, hours, task };
+            sub.totalHours = sub.logs.reduce((s, l) => s + Number(l.hours), 0);
+        }
+
+        adminCancelEdit();
+        await adminSaveSubmission(academicYear, studentId, weekId, sub.logs);
+    }
+
+    async function adminDeleteLog(studentId, weekId, logKey) {
+        const academicYear = document.getElementById('adminYearFilter').value;
+        const sub = state.submissions.find(s => s.studentId === studentId && s.academicYear === academicYear && s.logs && s.logs.some(l => (l.id ? l.id.toString() : `${l.date}_${l.hours}_${l.task}`) === logKey));
+        if (!sub || !sub.logs) { showToast('Entry not found', true); return; }
+        sub.logs = sub.logs.filter(l => (l.id ? l.id.toString() : `${l.date}_${l.hours}_${l.task}`) !== logKey);
+        sub.totalHours = sub.logs.reduce((s, l) => s + Number(l.hours), 0);
+        if (sub.logs.length === 0) state.submissions = state.submissions.filter(s => s !== sub);
+        await adminSaveSubmission(academicYear, studentId, sub.weekIdentifier, sub.logs);
+    }
+
+    async function adminSaveSubmission(academicYear, studentId, weekId, logs) {
+        try {
+            showToast('Saving…');
+            if (logs.length === 0) {
+                await gasFetch('admin_delete_submission', { academic_year: academicYear, student_id: studentId, week_identifier: weekId });
+            } else {
+                const sub = state.submissions.find(s => s.studentId === studentId && s.academicYear === academicYear);
+                await gasFetch('admin_save_submission', {
+                    data: {
+                        academic_year: academicYear,
+                        student_id: studentId,
+                        student_name: sub?.studentName || sub?.name || '',
+                        team: sub?.team || '',
+                        week_identifier: weekId,
+                        total_hours: logs.reduce((s, l) => s + Number(l.hours), 0),
+                        logs_json: JSON.stringify(logs)
+                    }
+                });
+            }
+            showToast('Saved!');
+            renderStudentDetails();
+            renderDashboard();
+        } catch (e) { showToast('Error: ' + e.message, true); renderStudentDetails(); }
+    }
+
+    let confirmActionCallback = null;
+    function openConfirmModal(title, msg, btnText, callback) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalMsg').innerHTML = msg;
+        document.getElementById('confirmModalActionBtn').textContent = btnText;
+        confirmActionCallback = callback;
+        const modal = document.getElementById('confirmModal');
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        gsap.fromTo(modal.querySelector('.pro-card'), { scale: 0.95, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" });
+    }
+    
+    function closeConfirmModal() {
+        const modal = document.getElementById('confirmModal');
+        gsap.to(modal.querySelector('.pro-card'), { scale: 0.95, opacity: 0, duration: 0.2, onComplete: () => {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            confirmActionCallback = null;
+        }});
+    }
+    
+    document.getElementById('confirmModalActionBtn').addEventListener('click', () => {
+        if(confirmActionCallback) confirmActionCallback();
+        closeConfirmModal();
+    });
+
+    function promptDeleteStudent() {
+        const studentId = state.viewingStudentId;
+        if(!studentId) return;
+        openConfirmModal("Delete Student?", "Are you sure you want to PERMANENTLY DELETE this student from the roster AND erase all their submitted hours?<br><br>This cannot be undone!", "Delete Permanently", () => adminDeleteStudent(studentId));
+    }
+
+    async function adminDeleteStudent(studentId) {
+        const btn = document.getElementById('deleteStudentBtn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<div class="loader !ml-0 !mr-0 !w-4 !h-4" style="display:inline-block; border-color: rgba(220,38,38,0.2); border-bottom-color: #dc2626;"></div>';
+        btn.disabled = true;
+
+        try {
+            await gasFetch('admin_delete_student', { student_id: studentId });
+
+            for (const year in state.rosters) {
+                state.rosters[year] = state.rosters[year].filter(s => s.id !== studentId);
+            }
+            state.submissions = state.submissions.filter(s => s.studentId !== studentId);
+            state.drafts = state.drafts.filter(d => d.studentId !== studentId);
+
+            showToast('Student completely deleted.');
+            closeStudentDetails(); renderDashboard(); renderRoster(); renderSettingsManager();
+        } catch(e) { showToast('Error deleting: ' + e.message, true); } 
+        finally { btn.innerHTML = originalHTML; btn.disabled = false; lucide.createIcons(); }
+    }
+
+    function runEmailSimulation() {
+        const resEl = document.getElementById('simResults');
+        resEl.classList.remove('hidden', 'bg-green-50', 'border-green-200', 'text-green-700', 'bg-amber-50', 'border-amber-200', 'text-amber-700', 'bg-red-50', 'border-red-200', 'text-red-700');
+        resEl.classList.add('bg-gray-50', 'text-gray-700', 'border-gray-200');
+        resEl.textContent = "Running simulation...";
+        
+        setTimeout(() => {
+            const threshold = state.submissionThreshold;
+            const targetYear = state.activeYear;
+            const currentRoster = state.rosters[targetYear] || [];
+            
+            const targetMonday = prevMonday;
+            const targetSunday = prevSunday;
+            
+            let activeCount = 0;
+            const studentsToEmail = [];
+
+            currentRoster.forEach(student => {
+                const sub = state.submissions.find(s => s.studentId === student.id && s.academicYear === targetYear);
+                let loggedHours = 0;
+                if (sub && sub.logs) {
+                    loggedHours = sub.logs.filter(l => { const d = new Date(l.date + 'T00:00:00'); return d >= targetMonday && d <= targetSunday; }).reduce((sum, l) => sum + Number(l.hours), 0);
+                }
+                
+                if (loggedHours > 0) activeCount++;
+                if (!student.email || !student.position) return;
+                
+                const pos = state.positions.find(p => p.name === student.position);
+                const reqHours = pos ? pos.minHours : 0;
+                
+                if (pos && pos.receivesEmails && reqHours > 0 && loggedHours < reqHours) {
+                    studentsToEmail.push({ id: student.id, name: student.name, team: student.team, req: reqHours, logged: loggedHours });
+                }
+            });
+
+            resEl.classList.remove('bg-gray-50', 'text-gray-700', 'border-gray-200');
+
+            if (activeCount < threshold) {
+                resEl.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-700');
+                resEl.innerHTML = `<strong class="text-amber-600 flex items-center gap-1.5 mb-2"><i data-lucide="moon" class="w-4 h-4"></i> BREAK WEEK MODE (Threshold Not Met)</strong>Active Students: ${activeCount} / ${threshold} required to trigger.<br/>Action: 0 emails would be sent.`;
+            } else {
+                if (studentsToEmail.length === 0) {
+                    resEl.classList.add('bg-green-50', 'border-green-200', 'text-green-700');
+                    resEl.innerHTML = `<strong class="text-green-600 flex items-center gap-1.5 mb-2"><i data-lucide="activity" class="w-4 h-4"></i> ACTIVE WEEK</strong>Active Students: ${activeCount} / ${threshold}<br/>Action: Everyone met their required hours! 0 emails would be sent.`;
+                } else {
+                    resEl.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
+                    let msg = `<strong class="text-red-600 flex items-center gap-1.5 mb-2"><i data-lucide="mail-warning" class="w-4 h-4"></i> ACTIVE WEEK (EMAILS WOULD SEND)</strong>`;
+                    msg += `<div class="mb-3 text-xs text-red-700/80 font-semibold">Active Students: ${activeCount} / ${threshold}</div>`;
+                    
+                    studentsToEmail.forEach(s => {
+                        const staffCCs = state.staff.filter(staff => staff.teams.includes(s.team)).map(staff => staff.name + ' (Staff)');
+                        const ccPositions = state.positions.filter(p => p.ccOnTeamEmails).map(p => p.name);
+                        const studentCCs = currentRoster.filter(r => r.team === s.team && ccPositions.includes(r.position) && r.id !== s.id).map(r => r.name + ' (' + r.position + ')');
+                        const allCCs = [...staffCCs, ...studentCCs].join(', ');
+                        
+                        msg += `<div class="mb-2 bg-white p-3 rounded-lg border border-red-200 shadow-sm relative overflow-hidden">
+                            <div class="absolute left-0 top-0 w-1 h-full bg-red-500"></div>
+                            <div class="font-bold text-gray-800 text-xs">${s.name} <span class="text-gray-400 font-semibold text-[10px] ml-1 uppercase tracking-wider">${s.team}</span></div>
+                            <div class="text-[10px] text-red-600 font-bold mb-1.5 mt-0.5">Missed: ${s.logged.toFixed(1)} / ${s.req} hrs</div>
+                            <div class="text-[9.5px] text-gray-500 leading-tight"><strong>CC:</strong> ${allCCs || 'None'}</div>
+                        </div>`;
+                    });
+                    resEl.innerHTML = msg;
+                }
+            }
+            lucide.createIcons();
+        }, 600); 
+    }
+
+    function downloadExcel() {
+        const yearFilterVal = document.getElementById('adminYearFilter').value; let exportData = [];
+        state.teams.forEach(teamName => {
+            const teamRoster = (state.rosters[yearFilterVal] || []).filter(r => r.team === teamName);
+            teamRoster.forEach(student => {
+                const studentSubs = state.submissions.filter(s => s.studentId === student.id && s.academicYear === yearFilterVal);
+                let hasData = false;
+                studentSubs.forEach(sub => {
+                    if (sub.logs && sub.logs.length > 0) {
+                        hasData = true;
+                        sub.logs.forEach(log => {
+                            const weekStr = formatWeekRange(getWeekIdentifier(log.date));
+                            exportData.push({ "Academic Year": yearFilterVal, "Team": student.team, "Student Name": student.name, "Student ID": student.id, "Email": student.email, "Position": student.position, "Week of": weekStr, "Date": log.date, "Hours": log.hours, "Task Description": log.task });
+                        });
+                    }
+                });
+                if (!hasData) exportData.push({ "Academic Year": yearFilterVal, "Team": student.team, "Student Name": student.name, "Student ID": student.id, "Email": student.email, "Position": student.position, "Week of": "N/A", "Date": "N/A", "Hours": 0, "Task Description": "No submissions recorded" });
+            });
+        });
+
+        exportData.sort((a, b) => {
+            if (a.Team !== b.Team) return a.Team.localeCompare(b.Team);
+            if (a["Student Name"] !== b["Student Name"]) return a["Student Name"].localeCompare(b["Student Name"]);
+            return new Date(a.Date) - new Date(b.Date);
+        });
+
+        if(exportData.length === 0) return showToast("No roster to export.", true);
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        ws['!cols'] = [{wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 25}, {wch: 15}, {wch: 20}, {wch: 12}, {wch: 8}, {wch: 40}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Master Timesheet");
+        XLSX.writeFile(wb, `Timesheet_Report_${yearFilterVal}.xlsx`);
+        showToast("Excel Exported Successfully!");
+    }
+
+    function showToast(msg, isError = false) { 
+        const t = document.getElementById('toast'); 
+        t.textContent = msg; 
+        if(isError) { t.classList.add('bg-red-500', 'text-white'); t.classList.remove('bg-gray-800'); } 
+        else { t.classList.remove('bg-red-500'); t.classList.add('bg-gray-800', 'text-white'); }
+        t.style.display = 'block'; 
+        gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3 });
+        setTimeout(() => { gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.display = 'none' }); }, 3500); 
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
