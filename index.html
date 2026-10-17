@@ -6,7 +6,31 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
     <title>CAB Student Leader Timesheet</title>
+
+    <!-- Theme bootstrap: runs before paint so there's no flash of the wrong theme -->
+    <script>
+        (function () {
+            var pref = 'system';
+            try { pref = localStorage.getItem('themePref') || 'system'; } catch (e) {}
+            var mq = window.matchMedia('(prefers-color-scheme: dark)');
+            window.applyTheme = function (p) {
+                pref = p;
+                try { localStorage.setItem('themePref', p); } catch (e) {}
+                var dark = p === 'dark' || (p === 'system' && mq.matches);
+                document.documentElement.classList.toggle('dark', dark);
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', dark ? '#1c1c1e' : '#ffffff');
+                document.querySelectorAll('[data-theme-opt]').forEach(function (b) {
+                    b.setAttribute('aria-pressed', b.getAttribute('data-theme-opt') === p ? 'true' : 'false');
+                });
+            };
+            if (mq.addEventListener) mq.addEventListener('change', function () { if (pref === 'system') window.applyTheme('system'); });
+            window.applyTheme(pref);
+            document.addEventListener('DOMContentLoaded', function () { window.applyTheme(pref); });
+        })();
+    </script>
     
     <link rel="icon" href="data:," />
     
@@ -29,6 +53,7 @@
 
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -123,6 +148,117 @@
             padding: 14px 20px; border-radius: 9999px; z-index: 2000; display: none; 
             text-align: center; background: #1f2937; color: white; font-weight: 500; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
+
+        /* THEME SWITCHER */
+        .theme-switch { display: inline-flex; padding: 2px; gap: 2px; border-radius: 9999px; background: #f3f4f6; border: 1px solid #e5e7eb; }
+        .theme-switch button { width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: #6b7280; transition: background 0.2s, color 0.2s; }
+        .theme-switch button:hover { color: #111827; }
+        .theme-switch button[aria-pressed="true"] { background: #ffffff; color: #522398; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+        .theme-switch svg { width: 15px; height: 15px; }
+
+        /* ============ DARK MODE (Apple-style neutral greys) ============
+           base #000 · elevated #1c1c1e · fill #2c2c2e · #3a3a3c · separator #38383a */
+        html.dark { color-scheme: dark; }
+        html.dark body, html.dark body.bg-gray-50 { background-color: #000000; color: #f5f5f7; }
+
+        html.dark ::-webkit-scrollbar-thumb { background: #48484a; }
+        html.dark ::-webkit-scrollbar-thumb:hover { background: #636366; }
+
+        html.dark .theme-switch { background: #2c2c2e; border-color: #38383a; }
+        html.dark .theme-switch button { color: #8e8e93; }
+        html.dark .theme-switch button:hover { color: #f5f5f7; }
+        html.dark .theme-switch button[aria-pressed="true"] { background: #636366; color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+        html.dark .pro-card { background: #1c1c1e; border-color: #38383a; border-top-color: #7a4ccf; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        html.dark .pro-card-subtle { background: #1c1c1e; border-color: #38383a; box-shadow: none; }
+
+        html.dark .btn-primary { background-color: #6a3bbf; border-color: #6a3bbf; }
+        html.dark .btn-primary:hover { background-color: #7a4ccf; border-color: #7a4ccf; }
+        html.dark .btn-secondary { color: #c4a6f5; border-color: #7a4ccf; }
+        html.dark .btn-secondary:hover { background-color: #6a3bbf; border-color: #6a3bbf; color: #fff; }
+
+        html.dark .control-input { background-color: #2c2c2e; border-color: #3a3a3c; color: #f5f5f7; }
+        html.dark .control-input::placeholder { color: #636366; }
+        html.dark .control-input:focus { border-color: #9a6ee0; box-shadow: 0 0 0 3px rgba(154, 110, 224, 0.25); }
+        html.dark select.control-input { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); }
+        html.dark select[multiple].control-input { background-image: none; }
+        html.dark select[multiple].control-input option:checked { background: #6a3bbf !important; }
+        html.dark .form-label { color: #aeaeb2; }
+        html.dark .loader-dark { border-color: rgba(196,166,245,0.2); border-bottom-color: #c4a6f5; }
+        html.dark #toast { background: #2c2c2e; border: 1px solid #3a3a3c; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        html.dark #toast.bg-gray-800 { background: #2c2c2e; }
+
+        /* Neutral surfaces */
+        html.dark .bg-white { background-color: #1c1c1e; }
+        html.dark .bg-gray-50 { background-color: #2c2c2e; }
+        html.dark .bg-gray-50\/50 { background-color: rgba(44,44,46,0.5); }
+        html.dark .bg-gray-100 { background-color: #2c2c2e; }
+        html.dark .bg-gray-300 { background-color: #48484a; }
+        html.dark .bg-gray-800 { background-color: #3a3a3c; }
+        html.dark .bg-gray-900\/40 { background-color: rgba(0,0,0,0.6); }
+        html.dark .bg-gray-900\/50 { background-color: rgba(0,0,0,0.65); }
+        html.dark .hover\:bg-white:hover { background-color: #2c2c2e; }
+        html.dark .hover\:bg-gray-50:hover { background-color: #2c2c2e; }
+        html.dark .hover\:bg-gray-100:hover { background-color: #3a3a3c; }
+
+        /* Neutral text */
+        html.dark .text-gray-900, html.dark .text-gray-800 { color: #f5f5f7; }
+        html.dark .text-gray-700 { color: #d1d1d6; }
+        html.dark .text-gray-600 { color: #aeaeb2; }
+        html.dark .text-gray-500 { color: #98989d; }
+        html.dark .text-gray-400 { color: #7c7c80; }
+        html.dark .hover\:text-gray-700:hover { color: #f5f5f7; }
+
+        /* Neutral borders */
+        html.dark .border-gray-100, html.dark .border-gray-200 { border-color: #38383a; }
+        html.dark .border-gray-300, html.dark .hover\:border-gray-300:hover { border-color: #48484a; }
+        html.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+        /* Brand purple (lightened for legibility on dark) */
+        html.dark .text-gcu-600 { color: #b28cf0; }
+        html.dark .text-gcu-700, html.dark .hover\:text-gcu-800:hover { color: #c4a6f5; }
+        html.dark .hover\:text-gcu-600:hover { color: #c4a6f5; }
+        html.dark .bg-gcu-50, html.dark .bg-purple-50 { background-color: rgba(122,76,207,0.18); }
+        html.dark .bg-gcu-600 { background-color: #6a3bbf; }
+        html.dark .border-gcu-100, html.dark .border-gcu-200, html.dark .border-purple-100 { border-color: rgba(154,110,224,0.35); }
+        html.dark .hover\:border-gcu-300:hover { border-color: #9a6ee0; }
+
+        /* Status colors (Apple system colors, dark variants) */
+        html.dark .bg-red-50, html.dark .hover\:bg-red-50:hover { background-color: rgba(255,69,58,0.14); }
+        html.dark .hover\:bg-red-100:hover { background-color: rgba(255,69,58,0.24); }
+        html.dark .border-red-100, html.dark .border-red-200 { border-color: rgba(255,69,58,0.35); }
+        html.dark .text-red-500, html.dark .text-red-600, html.dark .hover\:text-red-500:hover, html.dark .hover\:text-red-600:hover { color: #ff6961; }
+        html.dark .text-red-700, html.dark .hover\:text-red-700:hover { color: #ff8a80; }
+        html.dark .text-red-700\/80 { color: rgba(255,138,128,0.8); }
+
+        html.dark .bg-green-50 { background-color: rgba(48,209,88,0.12); }
+        html.dark .bg-green-100 { background-color: rgba(48,209,88,0.2); }
+        html.dark .border-green-200 { border-color: rgba(48,209,88,0.35); }
+        html.dark .text-green-600, html.dark .text-green-700 { color: #30d158; }
+        html.dark .text-green-800 { color: #5de07f; }
+
+        html.dark .bg-amber-50 { background-color: rgba(255,159,10,0.12); }
+        html.dark .bg-amber-100 { background-color: rgba(255,159,10,0.2); }
+        html.dark .border-amber-100, html.dark .border-amber-200 { border-color: rgba(255,159,10,0.35); }
+        html.dark .text-amber-500, html.dark .text-amber-600 { color: #ff9f0a; }
+        html.dark .text-amber-700 { color: #ffb340; }
+
+        html.dark .bg-blue-50, html.dark .hover\:bg-blue-50:hover { background-color: rgba(10,132,255,0.14); }
+        html.dark .bg-blue-100 { background-color: rgba(10,132,255,0.22); }
+        html.dark .border-blue-200 { border-color: rgba(10,132,255,0.35); }
+        html.dark .text-blue-500, html.dark .text-blue-600, html.dark .hover\:text-blue-600:hover { color: #409cff; }
+        html.dark .text-blue-700 { color: #70b4ff; }
+
+        /* Re-assert colored hover states so the neutral overrides above don't mask them */
+        html.dark .hover\:text-white:hover { color: #fff; }
+        html.dark .hover\:bg-red-500:hover { background-color: #ef4444; }
+        html.dark .hover\:bg-red-700:hover { background-color: #b91c1c; }
+        html.dark .hover\:bg-blue-500:hover { background-color: #3b82f6; }
+        html.dark .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+        html.dark .hover\:bg-amber-600:hover { background-color: #d97706; }
+        html.dark .hover\:border-red-500:hover { border-color: #ef4444; }
+        html.dark .hover\:border-red-700:hover { border-color: #b91c1c; }
+        html.dark .hover\:border-blue-500:hover { border-color: #3b82f6; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-[100dvh] w-full relative overflow-x-hidden font-sans flex flex-col items-center justify-start antialiased custom-scroll">
@@ -133,8 +269,15 @@
             <div class="flex items-center gap-3 sm:gap-4">
                 <img src="https://i.imgur.com/xhVbdmF.png" alt="Logo" class="h-10 sm:h-12 w-auto object-contain" onerror="this.style.display='none'" />
             </div>
-            <div class="font-bold text-gray-800 text-sm sm:text-base tracking-tight uppercase flex items-center gap-2">
-                <i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5 text-gcu-600"></i> ASGCU Timesheet
+            <div class="flex items-center gap-3 sm:gap-5">
+                <div class="font-bold text-gray-800 text-sm sm:text-base tracking-tight uppercase hidden min-[360px]:flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 sm:w-5 sm:h-5 text-gcu-600"></i> ASGCU Timesheet
+                </div>
+                <div class="theme-switch" role="group" aria-label="Appearance">
+                    <button type="button" data-theme-opt="light" onclick="applyTheme('light')" title="Light" aria-label="Light mode"><i data-lucide="sun"></i></button>
+                    <button type="button" data-theme-opt="dark" onclick="applyTheme('dark')" title="Dark" aria-label="Dark mode"><i data-lucide="moon"></i></button>
+                    <button type="button" data-theme-opt="system" onclick="applyTheme('system')" title="Match device" aria-label="Match device setting"><i data-lucide="monitor"></i></button>
+                </div>
             </div>
         </div>
     </nav>
